@@ -295,6 +295,6 @@ export function useSignOut() {
   const supabase = useSupabase();
   return async () => {
     await supabase.auth.signOut();
-    window.location.href = "/login";
+    window.location.href = "/app/login";
   };
 }

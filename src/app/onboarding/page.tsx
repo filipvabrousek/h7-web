@@ -57,7 +57,7 @@ export default function OnboardingPage() {
         updated_at: new Date().toISOString(),
       }).eq("id", user.id);
     }
-    window.location.href = "/";
+    window.location.href = "/app/";
   };
 
   const steps = [

@@ -49,7 +49,7 @@ export default function LoginPage() {
     }
     setLoading(true);
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${window.location.origin}/app/reset-password`,
     });
     setLoading(false);
     if (resetError) {
@@ -92,7 +92,10 @@ export default function LoginPage() {
         if (signInError) throw signInError;
       }
 
-      window.location.href = isSignUp ? "/onboarding" : "/";
+      // `window.location.href` is a raw browser navigation and does NOT get
+      // `basePath` prepended by Next.js (unlike <Link> / router.push). Since
+      // the app is mounted at /app, we include the prefix explicitly.
+      window.location.href = isSignUp ? "/app/onboarding" : "/app/";
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     }

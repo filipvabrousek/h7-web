@@ -84,7 +84,7 @@ export default function ProfilePage() {
         throw new Error(body.error ?? `Request failed (${res.status})`);
       }
       await supabase.auth.signOut();
-      window.location.href = "/login";
+      window.location.href = "/app/login";
     } catch (err: unknown) {
       setDeleteError(err instanceof Error ? err.message : "Delete failed");
       setDeleting(false);
