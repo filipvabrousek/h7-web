@@ -21,12 +21,17 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             </code>
             , which is not on the admin allowlist.
           </p>
-          <div className="text-xs text-gray-500 space-y-1">
-            <p>To grant access, add this email to <code className="font-mono">ADMIN_EMAILS</code> in <code className="font-mono">.env.local</code>:</p>
+          <div className="text-xs text-gray-500 space-y-2">
+            <p>Add this email to the <code className="font-mono">ADMIN_EMAILS</code> allowlist:</p>
             <pre className="bg-gray-100 dark:bg-[#242A2A] rounded-lg p-3 text-[11px] overflow-auto">
 ADMIN_EMAILS={user.email ?? "your@email"}
             </pre>
-            <p>Then restart <code className="font-mono">npm run dev</code>.</p>
+            <p>
+              <span className="font-semibold">Local:</span> set in <code className="font-mono">.env.local</code> and restart <code className="font-mono">npm run dev</code>.
+            </p>
+            <p>
+              <span className="font-semibold">Production:</span> set in Vercel Project&nbsp;Settings → Environment&nbsp;Variables (Production scope), then redeploy.
+            </p>
           </div>
           <Link
             href="/"
