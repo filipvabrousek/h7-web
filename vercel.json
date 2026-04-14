@@ -1,0 +1,7 @@
+{
+  "//": "Any non-/app path (root, /about, /cs, static assets of the marketing site, etc.) is proxied to the Nodality static project. /app/* is handled by this Next.js app directly (basePath in next.config.ts).",
+  "rewrites": [
+    { "source": "/", "destination": "https://h7-nodality.vercel.app/" },
+    { "source": "/:path((?!app(?:/.*)?$).*)", "destination": "https://h7-nodality.vercel.app/:path*" }
+  ]
+}
