@@ -1,8 +1,22 @@
 @import "tailwindcss";
 
+/* Class-based dark mode (Tailwind v4 syntax). The `dark` class is toggled
+   on <html> by ThemeProvider; `prefers-color-scheme` is only consulted when
+   the user has explicitly chosen "system". */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
+  --background: #F0F4FB;     /* matches iOS h7LightBackground */
   --foreground: #171717;
+  --card-bg: #f3f4f6;       /* gray-100 */
+  --card-bg-solid: #ffffff;  /* white */
+}
+
+.dark {
+  --background: #121617;     /* matches iOS h7LightBackground dark */
+  --foreground: #ededed;
+  --card-bg: #242A2A;        /* matches iOS h7CardBackground dark */
+  --card-bg-solid: #242A2A;
 }
 
 @theme inline {
@@ -10,13 +24,6 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
