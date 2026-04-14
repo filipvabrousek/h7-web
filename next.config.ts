@@ -6,6 +6,12 @@ const nextConfig: NextConfig = {
   // Next.js deployment. Setting basePath makes Next.js prefix every
   // internal link, asset URL, and API route automatically.
   basePath: "/app",
+  // Baked at build time — surfaced on the login screen so we can tell at a
+  // glance which deploy is live. `next.config.ts` evaluates once per build,
+  // so `new Date()` here freezes to the build's moment.
+  env: {
+    NEXT_PUBLIC_BUILD_TIME: new Date().toISOString(),
+  },
   images: {
     localPatterns: [
       {

@@ -24,6 +24,22 @@ export default function LoginPage() {
   };
   const ThemeIcon = themeMode === "light" ? Sun : themeMode === "dark" ? Moon : Monitor;
 
+  // Baked at build time in next.config.ts. Rendered below the logo in the
+  // Europe/Prague zone (CET/CEST, DST-aware) so the current deploy is
+  // identifiable at a glance.
+  const buildTime = process.env.NEXT_PUBLIC_BUILD_TIME;
+  const deployedAt = buildTime
+    ? new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Europe/Prague",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }).format(new Date(buildTime))
+    : null;
+
   const handleForgotPassword = async () => {
     setError(null);
     setInfo(null);
@@ -103,6 +119,11 @@ export default function LoginPage() {
           <p className="mt-3 text-xs font-bold text-gray-400 tracking-[3px] uppercase">
             Happy 7 / Healthy 7
           </p>
+          {deployedAt && (
+            <p className="mt-1 text-[10px] font-mono text-gray-400 dark:text-gray-500">
+              deployed {deployedAt} CEST
+            </p>
+          )}
         </div>
 
         {/* Form */}
