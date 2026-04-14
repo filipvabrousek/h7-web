@@ -1,6 +1,16 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+// Next.js strips the configured `basePath` from `request.nextUrl.pathname`
+// before the middleware sees it, and automatically re-prepends it when we
+// set `url.pathname` on a redirect. So we work with unprefixed paths on both
+// sides — no manual prefixing.
+function redirectTo(request: NextRequest, relPath: string): NextResponse {
+  const url = request.nextUrl.clone();
+  url.pathname = relPath.startsWith("/") ? relPath : "/" + relPath;
+  return NextResponse.redirect(url);
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -33,16 +43,12 @@ export async function updateSession(request: NextRequest) {
 
   // Redirect unauthenticated users to login
   if (!user && !pathname.startsWith("/login")) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+    return redirectTo(request, "/login");
   }
 
   // Redirect authenticated users away from login
   if (user && pathname.startsWith("/login")) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/";
-    return NextResponse.redirect(url);
+    return redirectTo(request, "/");
   }
 
   // Redirect new users to onboarding if they haven't completed it
@@ -60,9 +66,7 @@ export async function updateSession(request: NextRequest) {
       .single();
 
     if (profile && profile.initial_weekly_activity == null) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/onboarding";
-      return NextResponse.redirect(url);
+      return redirectTo(request, "/onboarding");
     }
   }
 
@@ -75,9 +79,7 @@ export async function updateSession(request: NextRequest) {
       .single();
 
     if (profile && profile.initial_weekly_activity != null) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/";
-      return NextResponse.redirect(url);
+      return redirectTo(request, "/");
     }
   }
 
