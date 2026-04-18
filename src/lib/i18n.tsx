@@ -94,6 +94,26 @@ const en = {
   "onboarding.weekly3to5": "3–5 hours",
   "onboarding.weekly5to7": "5–7 hours",
   "onboarding.weekly7plus": "7+ hours",
+  // My Path page
+  "myPath.title": "My Path",
+  "myPath.yourLevel": "YOUR LEVEL",
+  "myPath.minDaily": "MIN DAILY",
+  "myPath.weekly": "Weekly",
+  "myPath.dailyAvg": "Daily avg",
+  "myPath.recommendedActivities": "Recommended Activities",
+  "myPath.moreOnWeb": "More details on H7 website",
+  "myPath.graceTitle": "How Grace Works",
+  "myPath.graceBody": "After 3 consecutive weeks at the same level, you earn a grace week. If you slip one week, grace keeps you at your level. Grace is consumed on use and must be re-earned with another 3 consecutive weeks.",
+  "common.close": "Close",
+  // Level descriptions (fallback for H0 / H8+ — H1..H7 use level-activity-details data)
+  "level.h0.desc": "Start your journey!",
+  "level.h8.desc": "69 minutes daily. Beyond black belt — you're pushing into elite territory. Vary your training to stay injury-free.",
+  "level.h9.desc": "77 minutes daily. Diamond-level commitment! Consider periodized training with recovery days built in.",
+  "level.h10.desc": "86 minutes daily. Ruby intensity — mix endurance with strength and flexibility for a complete athlete profile.",
+  "level.h11.desc": "94 minutes daily. Sapphire dedication! You're training like a semi-professional. Listen to your body.",
+  "level.h12.desc": "103 minutes daily. Emerald mastery — nearly two hours of daily movement. Focus on quality and recovery.",
+  "level.h13.desc": "111 minutes daily. Gold standard! Multi-sport training and active lifestyle are your norm.",
+  "level.h14.desc": "120 minutes daily — the ultimate level. Two hours of daily movement. You are a true master of fitness.",
 } as const;
 
 type Dict = Record<keyof typeof en, string>;
@@ -182,6 +202,24 @@ const cs: Dict = {
   "onboarding.weekly3to5": "3–5 hodin",
   "onboarding.weekly5to7": "5–7 hodin",
   "onboarding.weekly7plus": "7+ hodin",
+  "myPath.title": "Moje cesta",
+  "myPath.yourLevel": "VAŠE ÚROVEŇ",
+  "myPath.minDaily": "MIN DENNĚ",
+  "myPath.weekly": "Týdně",
+  "myPath.dailyAvg": "Denní průměr",
+  "myPath.recommendedActivities": "Doporučené aktivity",
+  "myPath.moreOnWeb": "Více informací na webu H7",
+  "myPath.graceTitle": "Jak funguje milost",
+  "myPath.graceBody": "Po 3 po sobě jdoucích týdnech na stejné úrovni získáte týden milosti. Pokud vynecháte jeden týden, milost vás udrží na vaší úrovni. Milost se spotřebovává a musí být znovu získána dalšími 3 po sobě jdoucími týdny.",
+  "common.close": "Zavřít",
+  "level.h0.desc": "Začněte svou cestu!",
+  "level.h8.desc": "69 minut denně. Za černým pásem — posouváte se do elitního území. Střídejte trénink, abyste předešli zraněním.",
+  "level.h9.desc": "77 minut denně. Diamantové nasazení! Zvažte periodizovaný trénink se zabudovanými dny na regeneraci.",
+  "level.h10.desc": "86 minut denně. Rubínová intenzita — kombinujte vytrvalost se silou a flexibilitou pro kompletní atletický profil.",
+  "level.h11.desc": "94 minut denně. Safírové odhodlání! Trénujete jako poloprofesionál. Naslouchejte svému tělu.",
+  "level.h12.desc": "103 minut denně. Smaragdové mistrovství — téměř dvě hodiny denního pohybu. Zaměřte se na kvalitu a regeneraci.",
+  "level.h13.desc": "111 minut denně. Zlatý standard! Multisportovní trénink a aktivní životní styl jsou vaší normou.",
+  "level.h14.desc": "120 minut denně — nejvyšší úroveň. Dvě hodiny denního pohybu. Jste skutečný mistr kondice.",
 };
 
 const sk: Dict = {
@@ -268,6 +306,24 @@ const sk: Dict = {
   "onboarding.weekly3to5": "3–5 hodín",
   "onboarding.weekly5to7": "5–7 hodín",
   "onboarding.weekly7plus": "7+ hodín",
+  "myPath.title": "Moja cesta",
+  "myPath.yourLevel": "VAŠA ÚROVEŇ",
+  "myPath.minDaily": "MIN DENNE",
+  "myPath.weekly": "Týždenne",
+  "myPath.dailyAvg": "Denný priemer",
+  "myPath.recommendedActivities": "Odporúčané aktivity",
+  "myPath.moreOnWeb": "Viac informácií na webe H7",
+  "myPath.graceTitle": "Ako funguje milosť",
+  "myPath.graceBody": "Po 3 po sebe idúcich týždňoch na rovnakej úrovni získate týždeň milosti. Ak vynecháte jeden týždeň, milosť vás udrží na vašej úrovni. Milosť sa spotrebuje a musí byť znovu získaná ďalšími 3 po sebe idúcimi týždňami.",
+  "common.close": "Zavrieť",
+  "level.h0.desc": "Začnite svoju cestu!",
+  "level.h8.desc": "69 minút denne. Za čiernym pásom — posúvate sa do elitného územia. Striedajte tréning, aby ste predišli zraneniam.",
+  "level.h9.desc": "77 minút denne. Diamantové nasadenie! Zvážte periodizovaný tréning so zabudovanými dňami na regeneráciu.",
+  "level.h10.desc": "86 minút denne. Rubínová intenzita — kombinujte vytrvalosť so silou a flexibilitou pre kompletný atletický profil.",
+  "level.h11.desc": "94 minút denne. Zafírové odhodlanie! Trénujete ako poloprofesionál. Načúvajte svojmu telu.",
+  "level.h12.desc": "103 minút denne. Smaragdové majstrovstvo — takmer dve hodiny denného pohybu. Zamerajte sa na kvalitu a regeneráciu.",
+  "level.h13.desc": "111 minút denne. Zlatý štandard! Multišportový tréning a aktívny životný štýl sú vašou normou.",
+  "level.h14.desc": "120 minút denne — najvyššia úroveň. Dve hodiny denného pohybu. Ste skutočný majster kondície.",
 };
 
 const dictionaries: Record<"en" | "cs" | "sk", Dict> = { en, cs, sk };
@@ -278,6 +334,7 @@ export type TKey = keyof typeof en;
 
 interface I18nContextValue {
   language: AppLanguage;
+  code: "en" | "cs" | "sk";
   setLanguage: (lang: AppLanguage) => void;
   t: (key: TKey) => string;
 }
@@ -314,6 +371,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     const dict = dictionaries[code];
     return {
       language,
+      code,
       setLanguage,
       t: (key: TKey) => dict[key] ?? en[key] ?? key,
     };

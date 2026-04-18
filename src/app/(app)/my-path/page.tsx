@@ -4,6 +4,11 @@ import { useEffect, useState } from "react";
 import { Globe, X } from "lucide-react";
 import { iconForActivityType } from "@/lib/activity-icons";
 import { useUser, useActivities, useWeekRecords } from "@/lib/hooks";
+import { useI18n, type TKey } from "@/lib/i18n";
+import {
+  getLevelInfo,
+  type LevelActivityDetail,
+} from "@/lib/level-activity-details";
 import {
   computeStatus,
   LEVELS,
@@ -18,6 +23,7 @@ export default function MyPathPage() {
   const { activities } = useActivities(userId);
   const { records } = useWeekRecords(userId);
   const status = computeStatus(activities, records);
+  const { t } = useI18n();
 
   const [extended, setExtended] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState<LevelDef | null>(null);
@@ -30,7 +36,7 @@ export default function MyPathPage() {
   return (
     // Page background: white in light mode, near-black in dark mode (system bg).
     <div className="space-y-4 bg-white dark:bg-black -mx-4 -my-4 px-4 py-4 min-h-screen">
-      <h1 className="text-2xl font-bold">My Path</h1>
+      <h1 className="text-2xl font-bold">{t("myPath.title")}</h1>
 
       {/* Level ladder — every belt card uses the fixed H7 belt surface gray
           so H1 (white) and H7 (black) remain visible in both modes. */}
@@ -69,14 +75,14 @@ export default function MyPathPage() {
                     className="inline-block text-xs font-black px-2 py-0.5 rounded mb-1"
                     style={{ color: "#1A5494", backgroundColor: "rgba(26,84,148,0.18)" }}
                   >
-                    YOUR LEVEL
+                    {t("myPath.yourLevel")}
                   </span>
                 )}
                 <div className="font-bold text-lg" style={{ color: "#1A1A1F" }}>
                   {l.beltName}
                 </div>
                 <div className="text-sm" style={{ color: "rgba(26,26,31,0.7)" }}>
-                  {l.dailyMinutes} MIN DAILY
+                  {l.dailyMinutes} {t("myPath.minDaily")}
                 </div>
               </div>
 
@@ -88,12 +94,8 @@ export default function MyPathPage() {
 
       {/* Grace explanation */}
       <div className="bg-gray-100 dark:bg-gray-900 rounded-2xl p-4">
-        <h3 className="text-sm font-bold mb-2">How Grace Works</h3>
-        <p className="text-xs text-gray-500 leading-relaxed">
-          After 3 consecutive weeks at the same level, you earn a grace week. If you slip one week,
-          grace keeps you at your level. Grace is consumed on use and must be re-earned with another
-          3 consecutive weeks.
-        </p>
+        <h3 className="text-sm font-bold mb-2">{t("myPath.graceTitle")}</h3>
+        <p className="text-xs text-gray-500 leading-relaxed">{t("myPath.graceBody")}</p>
       </div>
 
       {/* Belt detail modal — bg white in light, black in dark.
@@ -106,43 +108,54 @@ export default function MyPathPage() {
   );
 }
 
-const RECOMMENDED_ACTIVITIES: Record<number, string[]> = {
-  1: ["Walking", "Stretching", "Housework", "Garden Work"],
-  2: ["Walking", "Stretching", "Housework", "Yoga", "Cycling", "Garden Work"],
-  3: ["Brisk Walking", "Cycling", "Swimming", "Yoga", "Dancing", "Hiking"],
-  4: ["Brisk Walking", "Running", "Cycling", "Swimming", "Yoga", "Dancing", "Hiking", "Strength Training"],
-  5: ["Running", "Cycling", "Swimming", "Strength Training", "Hiking", "Tennis", "Dancing", "Rowing"],
-  6: ["Running", "Cycling", "Swimming", "Strength Training", "Hiking", "Tennis", "CrossFit", "Rowing", "Martial Arts"],
-  7: ["Running", "Cycling", "Swimming", "Strength Training", "Hiking", "Tennis", "CrossFit", "Rowing", "Martial Arts", "Triathlon"],
+// ────────────────────────────────────────────────────────────────────────
+// Level → list of activity *labels* shown in the grid. For H1..H7 we use
+// the richly-detailed activity records from `level-activity-details.ts`
+// (which also drive the tap-to-open detail sheet). H0 and H8+ have no
+// detail data, so they fall back to a short static list.
+// ────────────────────────────────────────────────────────────────────────
+
+const FALLBACK_ACTIVITIES: Record<number, string[]> = {
+  0: [],
+  8: ["Running", "Cycling", "Swimming", "Strength Training", "Hiking", "Tennis", "CrossFit", "Rowing", "Martial Arts", "Triathlon"],
+  9: ["Running", "Cycling", "Swimming", "Strength Training", "Hiking", "Tennis", "CrossFit", "Rowing", "Martial Arts", "Triathlon"],
+  10: ["Running", "Cycling", "Swimming", "Strength Training", "Hiking", "Tennis", "CrossFit", "Rowing", "Martial Arts", "Triathlon"],
+  11: ["Running", "Cycling", "Swimming", "Strength Training", "Hiking", "Tennis", "CrossFit", "Rowing", "Martial Arts", "Triathlon"],
+  12: ["Running", "Cycling", "Swimming", "Strength Training", "Hiking", "Tennis", "CrossFit", "Rowing", "Martial Arts", "Triathlon"],
+  13: ["Running", "Cycling", "Swimming", "Strength Training", "Hiking", "Tennis", "CrossFit", "Rowing", "Martial Arts", "Triathlon"],
+  14: ["Running", "Cycling", "Swimming", "Strength Training", "Hiking", "Tennis", "CrossFit", "Rowing", "Martial Arts", "Triathlon"],
 };
-
-function recommendedFor(level: number): string[] {
-  if (level >= 8) return RECOMMENDED_ACTIVITIES[7];
-  return RECOMMENDED_ACTIVITIES[level] ?? [];
-}
-
-const LEVEL_DESCRIPTIONS: Record<number, string> = {
-  0: "Start your journey!",
-  1: "Just 9 minutes a day. Start with gentle walks and light household activity. The goal is simply to move regularly.",
-  2: "17 minutes daily. Add slightly longer walks or try yoga. You should notice improved energy and easier stair climbing.",
-  3: "26 minutes daily. Time to explore new activities! Try cycling, swimming, or dance classes.",
-  4: "35 minutes daily. Great foundation! You can add strength training and tackle longer hikes.",
-  5: "43 minutes daily. You're an active person now! Consider sports, rowing, or varied workout routines.",
-  6: "52 minutes daily. Impressive dedication! Mix high and low intensity activities for sustainable fitness.",
-  7: "60 minutes daily — the pinnacle! You're among the most active people. Enjoy the full spectrum of movement.",
-  8: "69 minutes daily. Beyond black belt — you're pushing into elite territory. Vary your training to stay injury-free.",
-  9: "77 minutes daily. Diamond-level commitment! Consider periodized training with recovery days built in.",
-  10: "86 minutes daily. Ruby intensity — mix endurance with strength and flexibility for a complete athlete profile.",
-  11: "94 minutes daily. Sapphire dedication! You're training like a semi-professional. Listen to your body.",
-  12: "103 minutes daily. Emerald mastery — nearly two hours of daily movement. Focus on quality and recovery.",
-  13: "111 minutes daily. Gold standard! Multi-sport training and active lifestyle are your norm.",
-  14: "120 minutes daily — the ultimate level. Two hours of daily movement. You are a true master of fitness.",
-};
-
 
 function LevelDetailModal({ level, onClose }: { level: LevelDef; onClose: () => void }) {
-  const activities = recommendedFor(level.value);
-  const description = LEVEL_DESCRIPTIONS[level.value] ?? "";
+  const { t, code } = useI18n();
+  const info = getLevelInfo(code, level.value);
+  const [selectedActivity, setSelectedActivity] = useState<LevelActivityDetail | null>(null);
+
+  // Lock body scroll while modal is open. Also close nested sheet on Esc.
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (selectedActivity) setSelectedActivity(null);
+      else onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [onClose, selectedActivity]);
+
+  // Assemble the list of {label, detail?} rows to render as the grid.
+  const rows: Array<{ label: string; detail: LevelActivityDetail | null }> = info
+    ? info.activities.map((a) => ({ label: a.name, detail: a }))
+    : (FALLBACK_ACTIVITIES[level.value] ?? []).map((n) => ({ label: n, detail: null }));
+
+  const descriptionText =
+    info?.description ??
+    t((`level.h${level.value}.desc` as unknown) as TKey);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40"
@@ -156,7 +169,7 @@ function LevelDetailModal({ level, onClose }: { level: LevelDef; onClose: () => 
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close"
+          aria-label={t("common.close")}
           className="absolute top-4 right-4 w-9 h-9 rounded-full bg-gray-200 dark:bg-[#242A2A] text-gray-600 dark:text-gray-300 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-700 transition"
         >
           <X size={18} />
@@ -186,45 +199,68 @@ function LevelDetailModal({ level, onClose }: { level: LevelDef; onClose: () => 
           <div className="flex gap-3">
             <div className="px-5 py-2 rounded-xl bg-gray-100 dark:bg-gray-900 text-center min-w-[88px]">
               <div className="text-xl font-bold">{level.weeklyMinutes}&apos;</div>
-              <div className="text-[11px] text-gray-500 mt-0.5">Weekly</div>
+              <div className="text-[11px] text-gray-500 mt-0.5">{t("myPath.weekly")}</div>
             </div>
             <div className="px-5 py-2 rounded-xl bg-gray-100 dark:bg-gray-900 text-center min-w-[88px]">
               <div className="text-xl font-bold">{level.dailyMinutes}&apos;</div>
-              <div className="text-[11px] text-gray-500 mt-0.5">Daily avg</div>
+              <div className="text-[11px] text-gray-500 mt-0.5">{t("myPath.dailyAvg")}</div>
             </div>
           </div>
         </div>
 
-        {/* Description block */}
+        {/* Level subtitle + description */}
         <div className="space-y-2">
-          <h3 className="text-base font-bold">Recommended Activities</h3>
-          {description && (
-            <p className="text-sm text-gray-500 leading-relaxed">{description}</p>
+          {info?.subtitle && (
+            <h3 className="text-base font-bold">{info.subtitle}</h3>
+          )}
+          {descriptionText && (
+            <p className="text-sm text-gray-500 leading-relaxed">{descriptionText}</p>
           )}
         </div>
 
         {/* Activity cards grid (2 columns) */}
-        {activities.length > 0 && (
-          <div className="grid grid-cols-2 gap-3">
-            {activities.map((name) => {
-              const Icon = iconForActivityType(name);
-              return (
-                <div
-                  key={name}
-                  className="flex flex-col items-center justify-center gap-2 h-[110px] rounded-xl"
-                  style={{ backgroundColor: H7_BELT_SURFACE }}
-                >
-                  <Icon size={28} color="#1A5494" weight="bold" />
-                  <span
-                    className="text-[13px] font-semibold text-center px-2 leading-tight"
-                    style={{ color: "#1A1A1F" }}
+        {rows.length > 0 && (
+          <>
+            <h3 className="text-base font-bold">{t("myPath.recommendedActivities")}</h3>
+            <div className="grid grid-cols-2 gap-3">
+              {rows.map(({ label, detail }, i) => {
+                const Icon = iconForActivityType(label);
+                const clickable = detail !== null;
+                const Wrapper: "button" | "div" = clickable ? "button" : "div";
+                return (
+                  <Wrapper
+                    key={`${label}-${i}`}
+                    type={clickable ? "button" : undefined}
+                    onClick={clickable ? () => setSelectedActivity(detail) : undefined}
+                    aria-label={clickable ? label : undefined}
+                    className={`relative flex flex-col items-center justify-center gap-2 h-[110px] rounded-xl ${
+                      clickable
+                        ? "cursor-pointer transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[#1A5494]"
+                        : ""
+                    }`}
+                    style={{ backgroundColor: H7_BELT_SURFACE }}
                   >
-                    {name}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+                    <Icon size={28} color="#1A5494" weight="bold" />
+                    <span
+                      className="text-[13px] font-semibold text-center px-2 leading-tight"
+                      style={{ color: "#1A1A1F" }}
+                    >
+                      {label}
+                    </span>
+                    {clickable && (
+                      <span
+                        aria-hidden
+                        className="absolute top-2 right-2 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center"
+                        style={{ color: "#1A5494", backgroundColor: "rgba(26,84,148,0.12)" }}
+                      >
+                        i
+                      </span>
+                    )}
+                  </Wrapper>
+                );
+              })}
+            </div>
+          </>
         )}
 
         {/* More details on H7 website */}
@@ -239,8 +275,78 @@ function LevelDetailModal({ level, onClose }: { level: LevelDef; onClose: () => 
           }}
         >
           <Globe size={16} />
-          More details on H7 website
+          {t("myPath.moreOnWeb")}
         </a>
+      </div>
+
+      {/* Nested activity-detail sheet (iOS ActivityDetailSheet parity) */}
+      {selectedActivity && (
+        <ActivityDetailSheet
+          activity={selectedActivity}
+          onClose={() => setSelectedActivity(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────
+// ActivityDetailSheet — nested modal shown on top of the belt-detail
+// modal. Mirrors the iOS sheet: icon header, name, subtitle, divider,
+// description.
+// ────────────────────────────────────────────────────────────────────────
+
+function ActivityDetailSheet({
+  activity,
+  onClose,
+}: {
+  activity: LevelActivityDetail;
+  onClose: () => void;
+}) {
+  const { t } = useI18n();
+  const Icon = iconForActivityType(activity.name);
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/50"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-md max-h-[85vh] overflow-y-auto bg-white dark:bg-black rounded-t-3xl sm:rounded-3xl p-6 space-y-4"
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label={t("common.close")}
+          className="absolute top-4 right-4 w-9 h-9 rounded-full bg-gray-200 dark:bg-[#242A2A] text-gray-600 dark:text-gray-300 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-700 transition"
+        >
+          <X size={18} />
+        </button>
+
+        <div className="flex items-center gap-4 pt-4 pr-10">
+          <div
+            className="flex-shrink-0 rounded-xl flex items-center justify-center"
+            style={{ width: 56, height: 56, backgroundColor: H7_BELT_SURFACE }}
+          >
+            <Icon size={36} color="#1A5494" weight="bold" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-lg font-bold leading-tight">{activity.name}</div>
+            {activity.subtitle && (
+              <div className="text-sm text-gray-500 leading-snug mt-0.5">
+                {activity.subtitle}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="h-px bg-gray-200 dark:bg-gray-800" />
+
+        {activity.desc && (
+          <p className="text-[15px] leading-relaxed whitespace-pre-wrap">
+            {activity.desc}
+          </p>
+        )}
       </div>
     </div>
   );
