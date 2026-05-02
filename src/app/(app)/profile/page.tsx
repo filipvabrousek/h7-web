@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useUser, useSignOut, useActivities, useWeekRecords } from "@/lib/hooks";
+import { useUser, useSignOut, useActivities, useWeekRecords, rebuildWeekRecords } from "@/lib/hooks";
 import { computeStatus } from "@/lib/level-engine";
-import { profileCompletion, computeBMI, bmiCategory } from "@/lib/types";
+import { computeBMI, bmiCategory } from "@/lib/types";
 import { WeeklyProgressChart } from "@/components/weekly-bar-chart";
 import { LevelBadge } from "@/components/level-badge";
 import {
-  User, Watch, Bell, Globe, Lock, HelpCircle, LogOut, ChevronRight, X, ArrowUpRight, Check, Trash2, Camera, Sun, Moon, Monitor, Palette,
+  User, Watch, Bell, Globe, Lock, HelpCircle, LogOut, ChevronRight, X, ArrowUpRight, Check, Trash2, Camera, Sun, Moon, Monitor, Palette, Shield,
 } from "lucide-react";
 import { useI18n, type AppLanguage } from "@/lib/i18n";
 import { useTheme, type ThemeMode } from "@/lib/theme";
@@ -111,7 +111,6 @@ export default function ProfilePage() {
   if (!user) return null;
 
   const status = computeStatus(activities, records);
-  const completion = profileCompletion(user);
   const bmi = computeBMI(user);
 
   const menuSections = [
@@ -138,6 +137,16 @@ export default function ProfilePage() {
       title: t("profile.other"),
       items: [
         { icon: Lock, label: t("profile.privacySecurity"), onClick: undefined, subtitle: undefined },
+        // Canonical URL — same /privacy.html that's submitted to App Store
+        // Connect and Google Play. Lives in /public so it's served at the
+        // domain root. Opens in a new tab so the user doesn't lose their
+        // app session.
+        {
+          icon: Shield,
+          label: t("profile.privacyPolicy"),
+          onClick: () => window.open("/privacy.html", "_blank", "noopener,noreferrer"),
+          subtitle: undefined,
+        },
         { icon: HelpCircle, label: t("profile.helpSupport"), onClick: () => setShowSupportChat(true), subtitle: undefined },
       ],
     },
@@ -205,10 +214,10 @@ export default function ProfilePage() {
             <button
               key={item.label}
               onClick={item.onClick}
-              className="w-full bg-gray-100 dark:bg-[#242A2A] rounded-xl p-3 flex items-center gap-3 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+              className="w-full bg-gray-200 dark:bg-[#242A2A] rounded-xl p-3 flex items-center gap-3 hover:bg-gray-300 dark:hover:bg-gray-700 transition"
             >
               <div className="w-9 h-9 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
-                <item.icon size={16} className="text-blue-600" />
+                <item.icon size={16} className="text-blue-600 dark:text-blue-300" />
               </div>
               <div className="flex-1 text-left">
                 <div className="text-sm font-medium">{item.label}</div>
@@ -223,12 +232,32 @@ export default function ProfilePage() {
       ))}
 
       {/* Extend Staircase */}
-      <div className="bg-gray-100 dark:bg-[#242A2A] rounded-xl p-4">
+      <div className="bg-gray-200 dark:bg-[#242A2A] rounded-xl p-4">
         <button
-          onClick={() => {
+          onClick={async () => {
             const next = !extendedStaircase;
             setExtendedStaircase(next);
             localStorage.setItem("h7_extended_staircase", String(next));
+            // Re-stamp every cached `level_achieved` against the
+            // new `Level.maxAllowed` cap. Without this, weeks that
+            // previously hit the H8+ minute threshold but were
+            // stored as H7 (because the staircase was capped) stay
+            // at H7 — the user toggles "Extend to H14" and then
+            // sees their belt stuck on black until they restart.
+            // Mirrors the iOS / Android fix in
+            // ExtendStaircaseCard / ProfileScreen.
+            if (user?.id && activities && records) {
+              try {
+                await rebuildWeekRecords(
+                  createClient(),
+                  user.id,
+                  activities,
+                  records,
+                );
+              } catch (e) {
+                console.error("Extend Staircase rebuild:", e);
+              }
+            }
           }}
           className="w-full flex items-center gap-3"
         >
@@ -253,23 +282,6 @@ export default function ProfilePage() {
             {extendedStaircase ? t("profile.h14Extended") : t("profile.extendToH14")}
           </span>
         </button>
-      </div>
-
-      {/* Profile Completion */}
-      <div className="bg-gray-100 dark:bg-[#242A2A] rounded-xl p-4">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-xs text-gray-500 font-medium">{t("profile.profileCompletion")}</span>
-          <span className="text-xs font-bold text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 px-2 py-0.5 rounded-lg">
-            {completion}%
-          </span>
-        </div>
-        <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-yellow-500 rounded-full transition-all"
-            style={{ width: `${completion}%` }}
-          />
-        </div>
-        <p className="text-xs text-gray-400 mt-1">{t("profile.addMoreData")}</p>
       </div>
 
       {/* Sign out */}

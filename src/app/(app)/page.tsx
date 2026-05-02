@@ -7,7 +7,9 @@ import { computeStatus, LEVELS, maxLevelValue } from "@/lib/level-engine";
 import { LevelBadgeCard } from "@/components/level-badge";
 import { DailyBarChart } from "@/components/weekly-bar-chart";
 import { LogActivityModal } from "@/components/log-activity-modal";
-import { colorForLevel, textColorForLevel, rollingAverageLevel, startOfWeek, formatDate, normalizeDate } from "@/lib/level-engine";
+import { startOfWeek, formatDate, normalizeDate } from "@/lib/level-engine";
+import { WeeklyConsistencyDots } from "@/components/weekly-consistency-dots";
+import { ThisWeekCard } from "@/components/this-week-card";
 import { h7Minutes } from "@/lib/types";
 
 export default function DashboardPage() {
@@ -75,94 +77,29 @@ export default function DashboardPage() {
         dailyTarget={level.dailyMinutes}
       />
 
-      {/* Weekly Consistency — fixed neutral gray (matches iOS/Android h7BeltSurface) */}
-      <div className="rounded-2xl p-4" style={{ backgroundColor: "#C7CACE" }}>
-        <h3 className="text-sm font-black tracking-wider mb-4" style={{ color: "#191A1E" }}>
-          WEEKLY CONSISTENCY
-        </h3>
-        {(() => {
-          const dayCaps = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
-          const totalSoFar = dayMinutes.slice(0, todayIdx + 1).reduce((a, b) => a + b, 0);
-          const weekLevel = rollingAverageLevel(dayMinutes, todayIdx);
-          const weekHasActivity = totalSoFar > 0;
-          return (
-            <div className="flex justify-between">
-              {dayCaps.map((label, i) => {
-                const mins = dayMinutes[i];
-                const isElapsed = i <= todayIdx;
-                const showFilled = isElapsed && weekHasActivity;
-                return (
-                  <div key={i} className="flex flex-col items-center gap-2 flex-1">
-                    <span className="text-[11px] font-bold tracking-wide" style={{ color: "rgba(25,26,30,0.6)" }}>
-                      {label}
-                    </span>
-                    <div
-                      className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold"
-                      style={
-                        showFilled
-                          ? {
-                              backgroundColor: colorForLevel(weekLevel.value),
-                              color: textColorForLevel(weekLevel.value),
-                            }
-                          : {
-                              backgroundColor: "rgba(0,0,0,0.06)",
-                              color: "rgba(25,26,30,0.35)",
-                            }
-                      }
-                    >
-                      {showFilled ? mins : "–"}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })()}
-      </div>
+      {/* Weekly Consistency — extracted to <WeeklyConsistencyDots>
+          so the vitest snapshot suite has a standalone component to
+          render. Same rule as before (pure rolling average from
+          Monday, pinned by consistency-circle helpers); rendering
+          delegated to the leaf component. Mirrors iOS
+          `WeeklyConsistencyView` and Android `WeeklyConsistencyCard`. */}
+      <WeeklyConsistencyDots dayMinutes={dayMinutes} todayIdx={todayIdx} />
 
       {/* Daily Bar Chart */}
       <DailyBarChart activities={activities} />
 
-      {/* This week activity progress card — dark, matches iOS */}
-      <div className="rounded-2xl p-5 bg-gray-900 dark:bg-gray-950 border border-gray-800">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-baseline gap-1">
-              <span className="text-4xl font-black text-white leading-none">
-                {status.currentWeekMinutes}
-              </span>
-              <span className="text-xl font-bold text-gray-500 leading-none">
-                /{status.currentWeekTarget}
-              </span>
-            </div>
-            <div className="text-xs font-bold text-gray-400 tracking-wider uppercase mt-2">
-              This Week Activity
-            </div>
-          </div>
-          <div className="text-right">
-            {!isMaxLevel ? (
-              <>
-                <div className="text-base font-black text-emerald-400">
-                  TO H{nextLevel.value}
-                </div>
-                <div className="text-base font-bold text-white mt-1">
-                  {Math.max(0, status.currentWeekTarget - status.currentWeekMinutes)}&apos; /{" "}
-                  {Math.max(0, 7 - dayMinutes.filter((m) => m > 0).length)} days
-                </div>
-              </>
-            ) : (
-              <div className="text-base font-black text-emerald-400">MAX LEVEL</div>
-            )}
-          </div>
-        </div>
-        {/* progress bar */}
-        <div className="h-1 bg-gray-800 rounded-full overflow-hidden mt-4">
-          <div
-            className="h-full rounded-full transition-all"
-            style={{ width: `${progress}%`, backgroundColor: colorForLevel(level.value) }}
-          />
-        </div>
-      </div>
+      {/* This-week progress card — extracted to <ThisWeekCard> so the
+          vitest snapshot suite has a standalone component to render.
+          Same rule as before; rendering delegated to the leaf
+          component. Mirrors iOS `WeekProgressView` and Android
+          `ThisWeekCard`. */}
+      <ThisWeekCard
+        currentMinutes={status.currentWeekMinutes}
+        targetMinutes={status.currentWeekTarget}
+        targetLevel={status.currentWeekTargetLevel}
+        isMaxLevel={isMaxLevel}
+        daysLogged={dayMinutes.filter((m) => m > 0).length}
+      />
 
       {/* Log Activity — full width */}
       <button

@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { Globe, X } from "lucide-react";
-import { iconForActivityType } from "@/lib/activity-icons";
+import { ActivityIcon } from "@/lib/activity-icons";
 import { useUser, useActivities, useWeekRecords } from "@/lib/hooks";
 import { useI18n, type TKey } from "@/lib/i18n";
 import {
+  findActivityDetailByEnglishName,
   getLevelInfo,
   type LevelActivityDetail,
 } from "@/lib/level-activity-details";
@@ -43,14 +44,17 @@ export default function MyPathPage() {
       <div className="space-y-2">
         {visibleLevels.filter((l) => l.value > 0).map((l) => {
           const isCurrent = l.value === status.currentLevel.value;
-          const isAchieved = l.value <= status.currentLevel.value;
+          // Every level renders at full opacity. The current one is
+          // signposted by the navy ring around its belt circle and the
+          // "YOUR LEVEL" chip; future levels stay readable so users can
+          // scan the staircase without squinting. This matches the
+          // aspirational tone — the belts you haven't earned yet are
+          // a preview, not a lock screen.
           return (
             <button
               key={l.value}
               onClick={() => setSelectedLevel(l)}
-              className={`w-full flex items-center gap-3 rounded-2xl p-4 transition ${
-                !isAchieved ? "opacity-50" : ""
-              }`}
+              className="w-full flex items-center gap-3 rounded-2xl p-4 transition"
               style={{ backgroundColor: H7_BELT_SURFACE }}
             >
               {/* Belt circle — true belt color, no inner gray track. Current level
@@ -129,7 +133,12 @@ const FALLBACK_ACTIVITIES: Record<number, string[]> = {
 function LevelDetailModal({ level, onClose }: { level: LevelDef; onClose: () => void }) {
   const { t, code } = useI18n();
   const info = getLevelInfo(code, level.value);
-  const [selectedActivity, setSelectedActivity] = useState<LevelActivityDetail | null>(null);
+  // Selected activity TYPE — represented by the array of variants
+  // sharing the same `name`. Tapping a tile opens a sheet that lists
+  // every variant (e.g. Running tile → Systematic training, Trail
+  // Running, Stroller, Orienteering — all four shown together).
+  // Mirrors the iOS / Android behavior after the same fix landed there.
+  const [selectedActivities, setSelectedActivities] = useState<LevelActivityDetail[] | null>(null);
 
   // Lock body scroll while modal is open. Also close nested sheet on Esc.
   useEffect(() => {
@@ -137,7 +146,7 @@ function LevelDetailModal({ level, onClose }: { level: LevelDef; onClose: () => 
     document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
-      if (selectedActivity) setSelectedActivity(null);
+      if (selectedActivities) setSelectedActivities(null);
       else onClose();
     };
     document.addEventListener("keydown", onKey);
@@ -145,12 +154,36 @@ function LevelDetailModal({ level, onClose }: { level: LevelDef; onClose: () => 
       document.body.style.overflow = prev;
       document.removeEventListener("keydown", onKey);
     };
-  }, [onClose, selectedActivity]);
+  }, [onClose, selectedActivities]);
 
-  // Assemble the list of {label, detail?} rows to render as the grid.
-  const rows: Array<{ label: string; detail: LevelActivityDetail | null }> = info
-    ? info.activities.map((a) => ({ label: a.name, detail: a }))
-    : (FALLBACK_ACTIVITIES[level.value] ?? []).map((n) => ({ label: n, detail: null }));
+  // Assemble the grid rows — one tile per unique activity type
+  // (deduplicated by `name`, since the same activity-type name is used
+  // for every variant of that type, e.g. "Běh" for Systematic training,
+  // Trail Running, Stroller, Orienteering). Each row carries the FULL
+  // list of variants so the detail sheet can render them all.
+  //
+  // H1..H7 pull directly from the level-activity-details source of truth.
+  // H8+ have no dedicated content — we fall back to a short static list,
+  // probing `findActivityDetailByEnglishName` to attach matches from a
+  // lower level when possible.
+  const rows: Array<{ label: string; details: LevelActivityDetail[] }> = (() => {
+    if (info) {
+      const byName = new Map<string, LevelActivityDetail[]>();
+      const order: string[] = [];
+      for (const a of info.activities) {
+        if (!byName.has(a.name)) {
+          byName.set(a.name, []);
+          order.push(a.name);
+        }
+        byName.get(a.name)!.push(a);
+      }
+      return order.map((name) => ({ label: name, details: byName.get(name)! }));
+    }
+    return (FALLBACK_ACTIVITIES[level.value] ?? []).map((n) => {
+      const matched = findActivityDetailByEnglishName(code, n);
+      return { label: matched?.name ?? n, details: matched ? [matched] : [] };
+    });
+  })();
 
   const descriptionText =
     info?.description ??
@@ -223,15 +256,14 @@ function LevelDetailModal({ level, onClose }: { level: LevelDef; onClose: () => 
           <>
             <h3 className="text-base font-bold">{t("myPath.recommendedActivities")}</h3>
             <div className="grid grid-cols-2 gap-3">
-              {rows.map(({ label, detail }, i) => {
-                const Icon = iconForActivityType(label);
-                const clickable = detail !== null;
+              {rows.map(({ label, details }, i) => {
+                const clickable = details.length > 0;
                 const Wrapper: "button" | "div" = clickable ? "button" : "div";
                 return (
                   <Wrapper
                     key={`${label}-${i}`}
                     type={clickable ? "button" : undefined}
-                    onClick={clickable ? () => setSelectedActivity(detail) : undefined}
+                    onClick={clickable ? () => setSelectedActivities(details) : undefined}
                     aria-label={clickable ? label : undefined}
                     className={`relative flex flex-col items-center justify-center gap-2 h-[110px] rounded-xl ${
                       clickable
@@ -240,7 +272,7 @@ function LevelDetailModal({ level, onClose }: { level: LevelDef; onClose: () => 
                     }`}
                     style={{ backgroundColor: H7_BELT_SURFACE }}
                   >
-                    <Icon size={28} color="#1A5494" weight="bold" />
+                    <ActivityIcon type={label} size={28} color="#1A5494" weight="bold" />
                     <span
                       className="text-[13px] font-semibold text-center px-2 leading-tight"
                       style={{ color: "#1A1A1F" }}
@@ -265,7 +297,7 @@ function LevelDetailModal({ level, onClose }: { level: LevelDef; onClose: () => 
 
         {/* More details on H7 website */}
         <a
-          href="https://h7.cz"
+          href="https://h7-web.vercel.app/"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold transition"
@@ -279,11 +311,12 @@ function LevelDetailModal({ level, onClose }: { level: LevelDef; onClose: () => 
         </a>
       </div>
 
-      {/* Nested activity-detail sheet (iOS ActivityDetailSheet parity) */}
-      {selectedActivity && (
+      {/* Nested activity-detail sheet — lists every variant of the
+          tapped activity type (mirrors iOS / Android). */}
+      {selectedActivities && selectedActivities.length > 0 && (
         <ActivityDetailSheet
-          activity={selectedActivity}
-          onClose={() => setSelectedActivity(null)}
+          activities={selectedActivities}
+          onClose={() => setSelectedActivities(null)}
         />
       )}
     </div>
@@ -292,19 +325,22 @@ function LevelDetailModal({ level, onClose }: { level: LevelDef; onClose: () => 
 
 // ────────────────────────────────────────────────────────────────────────
 // ActivityDetailSheet — nested modal shown on top of the belt-detail
-// modal. Mirrors the iOS sheet: icon header, name, subtitle, divider,
-// description.
+// modal. Receives every variant of the tapped activity type and renders
+// them as a stack of subtitle + description blocks under a single
+// activity-type header. Mirrors iOS `ActivityDetailSheet.details` and
+// Android `detailsFor`.
 // ────────────────────────────────────────────────────────────────────────
 
 function ActivityDetailSheet({
-  activity,
+  activities,
   onClose,
 }: {
-  activity: LevelActivityDetail;
+  activities: LevelActivityDetail[];
   onClose: () => void;
 }) {
   const { t } = useI18n();
-  const Icon = iconForActivityType(activity.name);
+  // `name` is identical across all entries (that's what we deduped on)
+  const headerName = activities[0]?.name ?? "";
   return (
     <div
       className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/50"
@@ -323,30 +359,43 @@ function ActivityDetailSheet({
           <X size={18} />
         </button>
 
+        {/* Activity-type header (icon + display name) — single one for
+            the whole sheet, since all variants share the same type. */}
         <div className="flex items-center gap-4 pt-4 pr-10">
           <div
             className="flex-shrink-0 rounded-xl flex items-center justify-center"
             style={{ width: 56, height: 56, backgroundColor: H7_BELT_SURFACE }}
           >
-            <Icon size={36} color="#1A5494" weight="bold" />
+            <ActivityIcon type={headerName} size={36} color="#1A5494" weight="bold" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-lg font-bold leading-tight">{activity.name}</div>
-            {activity.subtitle && (
-              <div className="text-sm text-gray-500 leading-snug mt-0.5">
-                {activity.subtitle}
-              </div>
-            )}
+            <div className="text-lg font-bold leading-tight">{headerName}</div>
           </div>
         </div>
 
         <div className="h-px bg-gray-200 dark:bg-gray-800" />
 
-        {activity.desc && (
-          <p className="text-[15px] leading-relaxed whitespace-pre-wrap">
-            {activity.desc}
-          </p>
-        )}
+        {/* One block per variant: subtitle + description, separated by
+            a thin divider. */}
+        <div className="space-y-5">
+          {activities.map((a, i) => (
+            <div key={`${a.subtitle ?? ""}-${i}`} className="space-y-2">
+              {a.subtitle && (
+                <div className="text-base font-semibold leading-snug">
+                  {a.subtitle}
+                </div>
+              )}
+              {a.desc && (
+                <p className="text-[15px] leading-relaxed whitespace-pre-wrap text-gray-700 dark:text-gray-300">
+                  {a.desc}
+                </p>
+              )}
+              {i < activities.length - 1 && (
+                <div className="h-px bg-gray-200 dark:bg-gray-800 mt-5" />
+              )}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

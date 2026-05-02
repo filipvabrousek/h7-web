@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useUser, useActivities } from "@/lib/hooks";
+import { useUser, useActivities, useSyncStatus } from "@/lib/hooks";
 import { h7Minutes } from "@/lib/types";
 import type { ActivityLog } from "@/lib/types";
+import { SyncStatusBadge } from "@/components/sync-status-badge";
 import {
   colorForLevel,
   textColorForLevel,
@@ -14,7 +15,7 @@ import {
 } from "@/lib/level-engine";
 import { ChevronLeft, ChevronRight, Trash2, X, Pencil } from "lucide-react";
 import { EditActivityModal } from "@/components/edit-activity-modal";
-import { iconForActivityType, colorForActivityType, displayNameForActivityType } from "@/lib/activity-icons";
+import { ActivityIcon, colorForActivityType, displayNameForActivityType } from "@/lib/activity-icons";
 
 type Period = "week" | "month" | "all";
 
@@ -57,7 +58,12 @@ function aggregateByType(
 
 export default function HistoryPage() {
   const { userId } = useUser();
-  const { activities, updateActivity, deleteActivity } = useActivities(userId);
+  const { status, beginSync, endSyncSuccess, endSyncFailure } = useSyncStatus();
+  const { activities, updateActivity, deleteActivity } = useActivities(userId, {
+    beginSync,
+    endSyncSuccess,
+    endSyncFailure,
+  });
   const [period, setPeriod] = useState<Period>("week");
   const [deleteTarget, setDeleteTarget] = useState<ActivityLog | null>(null);
   const [editingActivity, setEditingActivity] = useState<ActivityLog | null>(null);
@@ -154,6 +160,10 @@ export default function HistoryPage() {
       <h1 className="text-2xl font-bold">
         {period === "week" ? "Week" : period === "month" ? "Month" : "All Time"}
       </h1>
+
+      {/* Sync freshness — green pill with "Last synced X min ago" when
+          fresh, red when stale or when the last refresh errored. */}
+      <SyncStatusBadge status={status} />
 
       {/* Period tabs */}
       <div className="flex gap-1 bg-gray-100 dark:bg-[#242A2A] rounded-xl p-1">
@@ -294,7 +304,6 @@ export default function HistoryPage() {
         ) : (
           aggregated.map((row) => {
             const tint = colorForActivityType(row.type);
-            const TypeIcon = iconForActivityType(row.type);
             return (
               <div
                 key={row.type}
@@ -304,7 +313,7 @@ export default function HistoryPage() {
                   className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0"
                   style={{ backgroundColor: `${tint}2E` }}
                 >
-                  <TypeIcon size={22} color={tint} weight="bold" />
+                  <ActivityIcon type={row.type} size={22} color={tint} weight="bold" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-base font-semibold truncate">
@@ -333,7 +342,6 @@ export default function HistoryPage() {
         ) : (
           filteredActivities.map((a) => {
             const tint = colorForActivityType(a.activity_type);
-            const ActIcon = iconForActivityType(a.activity_type);
             const d = new Date(a.date.includes("T") ? a.date : a.date + "T00:00:00");
             return (
               <div
@@ -345,7 +353,7 @@ export default function HistoryPage() {
                   className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
                   style={{ backgroundColor: `${tint}2E` }}
                 >
-                  <ActIcon size={16} color={tint} weight="bold" />
+                  <ActivityIcon type={a.activity_type} size={16} color={tint} weight="bold" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-semibold truncate">

@@ -547,3 +547,32 @@ export function getLevelInfo(code: "cs" | "en" | "sk", level: number): LevelInfo
   const key = ("h" + level) as LevelKey;
   return BY_CODE[code]?.[key] ?? EN_DETAILS[key] ?? null;
 }
+
+// Look up an activity by its English name anywhere in H1..H7 and return the
+// matching localized detail (in the caller's locale). Used by the My Path
+// H8+ tiles: those levels have no dedicated content, but many of the
+// activity *names* (Running, Cycling, …) appear verbatim in lower levels.
+// When they do, we surface the same detail sheet so the tile still opens.
+//
+// The details arrays are parallel across locales (same activity at same
+// index in CS/EN/SK), so we match against EN_DETAILS and then read the
+// same (level, index) slot from the caller's locale.
+const LEVEL_KEYS: LevelKey[] = ["h1", "h2", "h3", "h4", "h5", "h6", "h7"];
+
+export function findActivityDetailByEnglishName(
+  code: "cs" | "en" | "sk",
+  englishName: string,
+): LevelActivityDetail | null {
+  const needle = englishName.trim().toLowerCase();
+  if (!needle) return null;
+  for (const key of LEVEL_KEYS) {
+    const enActivities = EN_DETAILS[key].activities;
+    const idx = enActivities.findIndex(
+      (a) => a.name.trim().toLowerCase() === needle,
+    );
+    if (idx === -1) continue;
+    const localized = BY_CODE[code]?.[key]?.activities[idx];
+    return localized ?? enActivities[idx];
+  }
+  return null;
+}

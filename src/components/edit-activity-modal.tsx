@@ -92,7 +92,7 @@ export function EditActivityModal({ activity, onSave, onClose }: Props) {
                       : "bg-gray-100 dark:bg-[#242A2A] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
                   }`}
                 >
-                  {m === 60 ? "1 hr" : `${m} min`}
+                  {`${m} min`}
                 </button>
               ))}
             </div>

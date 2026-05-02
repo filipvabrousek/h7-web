@@ -163,11 +163,20 @@ export interface LevelStatus {
   projectedLevel: LevelDef;
   currentWeekMinutes: number;
   currentWeekTarget: number;
+  /**
+   * Belt the "This Week" progress bar is filling toward. Derived from
+   * `currentWeekTarget` so the "TO Hn" readout stays in lock-step with
+   * the bar's denominator: while the user is still earning their current
+   * belt it equals `currentLevel`, but once the week's minutes have
+   * banked that belt the target (and therefore this label) advances to
+   * the next rung. Matches iOS / Android.
+   */
+  currentWeekTargetLevel: LevelDef;
 }
 
 // MARK: - Compute Status
 
-const WEEKS_FOR_GRACE = 3;
+export const WEEKS_FOR_GRACE = 3;
 
 export function computeStatus(
   activities: ActivityLog[],
@@ -195,12 +204,26 @@ export function computeStatus(
   const sorted = [...weekRecords].sort((a, b) => a.week_start.localeCompare(b.week_start));
   const history = replayHistory(sorted);
 
+  // Effective belt during the IN-PROGRESS week. Mirror of iOS /
+  // Android: never drop below banked status mid-week. The week
+  // isn't over — judging "you slacked" on a Tuesday morning when
+  // the user has only logged a fraction of the minutes they need
+  // is hostile UX. Demotion still happens at end-of-week when
+  // recalculateWeekRecord stamps the actual levelAchieved, which
+  // feeds back through replayHistory next Monday.
+  //
+  // Upward deviation is honored: if currentWeekLevel exceeds
+  // history.level (live promotion), we show the higher level.
+  //
+  // Previously this had a third branch dropping to currentWeekLevel
+  // when grace was already used in the prior completed week —
+  // produced a "user with multi-week black-belt streak shows H2 on
+  // Tuesday morning" bug. See iOS/Android LevelEngine for the
+  // matching change.
   const effectiveLevel =
-    currentWeekLevel.value >= history.level.value
+    currentWeekLevel.value > history.level.value
       ? currentWeekLevel
-      : history.graceAvailable && !history.graceUsedThisWeek
-        ? history.level
-        : currentWeekLevel;
+      : history.level;
 
   // Week streak
   let weekStreak = 0;
@@ -210,8 +233,37 @@ export function computeStatus(
   }
   if (currentWeekMinutes >= 60) weekStreak++;
 
+  // Target for the "This Week" progress bar.
+  // Rolling semantics: the bar always fills toward the NEXT rung the
+  // user hasn't banked yet.
+  //   • While currentWeekMinutes < effectiveLevel.weeklyMinutes the
+  //     target is the current belt's threshold (still earning the
+  //     badge they hold; "TO Hn" readout shows the current level).
+  //   • Once currentWeekMinutes >= effectiveLevel.weeklyMinutes the
+  //     current belt is locked in for the week, so the target
+  //     advances to the NEXT level's threshold and the "TO Hn+1"
+  //     readout reflects the new goal. Without this step the bar
+  //     sits pinned at 100 % and the countdown collapses to 0 as
+  //     soon as the user crosses their own threshold — surfacing
+  //     the next rung is the whole point of the card.
+  // H0 has weeklyMinutes === 0, which would zero the progress
+  // fraction, so fall back to H1 (60 min) for new users.
   const nextLevel = LEVELS[Math.min(effectiveLevel.value + 1, maxLevelValue())];
-  const target = nextLevel?.weeklyMinutes ?? effectiveLevel.weeklyMinutes;
+  const nextThreshold = nextLevel && nextLevel.value !== effectiveLevel.value
+    ? nextLevel.weeklyMinutes
+    : null;
+  let target: number;
+  if (effectiveLevel.weeklyMinutes === 0) {
+    target = nextThreshold ?? 60;
+  } else if (
+    currentWeekMinutes >= effectiveLevel.weeklyMinutes &&
+    nextThreshold !== null &&
+    nextThreshold > effectiveLevel.weeklyMinutes
+  ) {
+    target = nextThreshold;
+  } else {
+    target = effectiveLevel.weeklyMinutes;
+  }
 
   return {
     currentLevel: effectiveLevel,
@@ -222,6 +274,7 @@ export function computeStatus(
     projectedLevel,
     currentWeekMinutes,
     currentWeekTarget: target,
+    currentWeekTargetLevel: levelFromWeeklyMinutes(target),
   };
 }
 
@@ -261,10 +314,23 @@ function replayHistory(records: WeekRecord[]): HistoryStatus {
         lastGraceUsed = true;
         graceAvailable = false;
       } else {
+        // No grace at the OLD level — drop exactly ONE level.
+        //
+        // SPEC (rules.md line 10): "next week I drop one step lower,
+        // there I am again protected for one week. And in the same
+        // rhythm I then possibly drop another step lower (always
+        // protected for a week and then a drop by 1 step)."
+        //
+        // So every level drop AUTOMATICALLY arms grace at the new
+        // level. Produces the alternating drop / protect / drop /
+        // protect rhythm the spec describes for an extended absence
+        // (illness, injury, work, travel) — without it a banked-H7
+        // user who stops logging entirely would crash from black to
+        // white in 6 weeks. Mirrors iOS / Android.
         const newVal = Math.max(0, statusLevel.value - 1);
         statusLevel = levelFromValue(newVal);
         consecutiveAtStatus = achieved.value >= statusLevel.value ? 1 : 0;
-        graceAvailable = consecutiveAtStatus >= WEEKS_FOR_GRACE;
+        graceAvailable = true;   // soft-landing: 1 free week at new level
         lastGraceUsed = false;
       }
     }
@@ -275,9 +341,38 @@ function replayHistory(records: WeekRecord[]): HistoryStatus {
 
 // MARK: - Rolling Average
 
+/**
+ * Belt color for the weekly consistency circles.
+ *
+ * Rule (spec rules.md line 4 — "Průměrují se ... jen ty kruhy nad
+ * sloupci"): the rolling average is taken over the days that have
+ * LOGGED ACTIVITY only — zero-minute days are ignored in BOTH the
+ * numerator and the denominator. So the circles paint the user's pace
+ * on the days they actually trained, independent of how many rest /
+ * unsynced days sit alongside.
+ *
+ * Concrete consequence: `[57, 70, 0, 0, 0, 0, 0]` queried with
+ * `throughDay = 5` (Saturday) produces `127 / 2 × 7 = 444.5` → H7
+ * black, NOT `127 / 6 × 7 = 148` → H2 yellow. This is the exact
+ * "why are circles yellow when I logged 70+ minutes Mon and Tue?"
+ * scenario from the field — the old calendar-elapsed divisor punished
+ * users for unsynced or rest days they never opted into.
+ *
+ * `× 7` is the unit conversion into the canonical weekly-minute
+ * threshold space (`levelFromWeeklyMinutes` compares against
+ * 60/120/180/...). Mathematically equivalent to comparing the per-day
+ * average directly against per-day thresholds.
+ *
+ * Edge cases:
+ *   - `throughDay` out of range → H0 (defensive).
+ *   - No active days in `[0..throughDay]` → H0 (no projection).
+ */
 export function rollingAverageLevel(dailyMinutes: number[], throughDay: number): LevelDef {
   if (throughDay < 0 || throughDay >= dailyMinutes.length) return LEVELS[0];
-  const total = dailyMinutes.slice(0, throughDay + 1).reduce((a, b) => a + b, 0);
-  const projected = Math.floor((total / (throughDay + 1)) * 7);
+  const slice = dailyMinutes.slice(0, throughDay + 1);
+  const total = slice.reduce((a, b) => a + b, 0);
+  const activeDays = slice.filter(m => m > 0).length;
+  if (activeDays === 0) return LEVELS[0];
+  const projected = Math.floor((total / activeDays) * 7);
   return levelFromWeeklyMinutes(projected);
 }

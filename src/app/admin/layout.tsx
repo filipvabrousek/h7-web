@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireAuthUser, isAdminEmail } from "@/lib/admin/guard";
-import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { AdminShell } from "@/components/admin/AdminShell";
 
 export const metadata = {
   title: "H7 Admin",
@@ -44,12 +44,8 @@ ADMIN_EMAILS={user.email ?? "your@email"}
     );
   }
 
-  return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950">
-      <AdminSidebar email={user.email ?? ""} />
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto p-6 sm:p-8">{children}</div>
-      </main>
-    </div>
-  );
+  // AdminShell is a client component so it can manage drawer state for
+  // the responsive sidebar (collapses to a hamburger-toggled off-canvas
+  // drawer below md). The auth check stays here in the server layout.
+  return <AdminShell email={user.email ?? ""}>{children}</AdminShell>;
 }

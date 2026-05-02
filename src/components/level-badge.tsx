@@ -1,16 +1,23 @@
 "use client";
 
-import { colorForLevel, textColorForLevel, LEVELS } from "@/lib/level-engine";
+import { levelFromValue, LEVELS } from "@/lib/level-engine";
+import { badgeColor, badgeTextColor } from "@/lib/dashboard-color-rules";
 
 export function LevelBadge({ level, size = 40 }: { level: number; size?: number }) {
+  // Pinned by `badgeColor` / `badgeTextColor` in dashboard-color-rules
+  // — do NOT inline. Kept the `level: number` external API for caller
+  // convenience; the conversion to LevelDef is local. The helpers
+  // mirror iOS `LevelBadgeView.badgeColor(for:)` and Android
+  // `DashboardColorRules.badgeColor(level)`.
+  const l = levelFromValue(level);
   return (
     <div
       className="rounded-full flex items-center justify-center font-black"
       style={{
         width: size,
         height: size,
-        backgroundColor: colorForLevel(level),
-        color: textColorForLevel(level),
+        backgroundColor: badgeColor(l),
+        color: badgeTextColor(l),
         fontSize: size * 0.4,
       }}
     >

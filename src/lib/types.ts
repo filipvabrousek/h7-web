@@ -81,6 +81,10 @@ export const ACTIVITY_TYPES = [
   "Housework",
   "Garden Work",
   "H7 Move",
+  "Aerobics",
+  "Trampoline",
+  "Frisbee",
+  "Other",
 ] as const;
 
 export type ActivityType = (typeof ACTIVITY_TYPES)[number];
@@ -95,6 +99,15 @@ export interface ActivityLog {
   intensity: number | string | null;  // TEXT column: may be number, string-number, or word
   /** Belt level the user held when the activity was logged (e.g. "H0"..."H8+"). */
   user_level: string | null;
+  /**
+   * Upstream sample identifier (HealthKit sample UUID on iOS / Health
+   * Connect record metadata id on Android). Carried through on
+   * round-trip so native clients can map platform deletion-change
+   * events back to the Supabase row. Null for manual entries and for
+   * auto-imported rows created before migration 0005. The web client
+   * itself never writes this — it's populated by native imports only.
+   */
+  source_id: string | null;
   created_at: string | null;
 }
 
@@ -183,22 +196,6 @@ export function bmiCategory(bmi: number): string {
   if (bmi < 25) return "Normal";
   if (bmi < 30) return "Overweight";
   return "Obese";
-}
-
-export function profileCompletion(user: H7User): number {
-  let total = 4;
-  let filled = 4;
-  const optional = [
-    user.height_cm,
-    user.weight_kg,
-    user.gender,
-    user.birth_year,
-    user.country,
-    user.avatar_url,
-  ];
-  total += optional.length;
-  filled += optional.filter((v) => v != null).length;
-  return Math.round((filled / total) * 100);
 }
 
 // MARK: - Belt Promotion

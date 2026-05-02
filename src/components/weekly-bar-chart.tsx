@@ -1,8 +1,9 @@
 "use client";
 
-import { colorForLevel, textColorForLevel, startOfWeek, isSameDay, levelFromWeeklyMinutes, rollingAverageLevel, formatDate, normalizeDate, parseDate } from "@/lib/level-engine";
+import { colorForLevel, textColorForLevel, startOfWeek, isSameDay, levelFromWeeklyMinutes, formatDate, normalizeDate, parseDate } from "@/lib/level-engine";
+import { barColor, barProjectedLevel } from "@/lib/dashboard-color-rules";
 import { h7Minutes, type ActivityLog } from "@/lib/types";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * Belt color — TRUE in both light and dark mode.
@@ -41,10 +42,18 @@ export function DailyBarChart({ activities }: { activities: ActivityLog[] }) {
       .reduce((sum, a) => sum + h7Minutes(a), 0);
   });
 
+  // Bar color rule lives on `barProjectedLevel(dayMinutes)` in
+  // @/lib/dashboard-color-rules. Pinned by dashboard-color-rules.test.ts
+  // — do NOT inline. Per spec rules.md line 3 ("8 minut bude vždy bílý
+  // a 62 min bude vždy černý"), each bar's color is fully determined
+  // by that day's own minutes projected to a week. Pre-fix the rule
+  // was rollingAverageLevel(rawMinutes, i), which painted a strong-
+  // week Friday with master purple even though 62 min alone is H7
+  // black. Same iOS/Android bug, fixed there too.
   const dayData: DayData[] = days.map((label, i) => ({
     label,
     minutes: rawMinutes[i],
-    level: rollingAverageLevel(rawMinutes, i).value,
+    level: barProjectedLevel(rawMinutes[i]).value,
   }));
 
   const maxMinutes = Math.max(...dayData.map((d) => d.minutes), 60);
@@ -65,10 +74,9 @@ export function DailyBarChart({ activities }: { activities: ActivityLog[] }) {
                 className="w-full rounded-t-md transition-all"
                 style={{
                   height: `${heightPx}px`,
-                  backgroundColor:
-                    day.minutes > 0
-                      ? chartColor(day.level)
-                      : "transparent",
+                  // Pinned by dashboard-color-rules.barColor — do NOT inline.
+                  // Returns INACTIVE_BAR_COLOR (transparent) for empty days.
+                  backgroundColor: barColor(day.minutes),
                 }}
               />
               <span className="text-xs font-semibold" style={{ color: "rgba(25,26,30,0.6)" }}>{day.label}</span>
@@ -91,6 +99,16 @@ interface WeekData {
 export function WeeklyProgressChart({ activities }: { activities: ActivityLog[] }) {
   const [selected, setSelected] = useState<number | null>(null);
   const currentWeekStart = startOfWeek();
+  // Bars are laid out oldest → newest (24 weeks back at index 0,
+  // current week at the trailing edge). The scroll container
+  // defaults to scrollLeft = 0, which means the user lands looking
+  // at half-a-year-old data and has to drag right to find the
+  // current week. Snap to the right edge on mount so the most
+  // recent weeks (and the highlighted current-week marker) are
+  // what greets them. Mirrors the iOS `ScrollViewReader.scrollTo
+  // (lastIndex, anchor: .trailing)` and Android `LaunchedEffect
+  // { scrollState.scrollTo(maxValue) }` fixes.
+  const scrollRef = useRef<HTMLDivElement | null>(null);
 
   const TOTAL_WEEKS = 24;
   const weeks: WeekData[] = Array.from({ length: TOTAL_WEEKS }, (_, i) => {
@@ -121,28 +139,32 @@ export function WeeklyProgressChart({ activities }: { activities: ActivityLog[] 
   const BAR_GAP = 6; // px
   const CHART_PX = 128; // bar drawing area height in pixels
 
+  // Snap to the right edge once on mount (and when the week count
+  // changes — typically only TOTAL_WEEKS is constant, but covers
+  // future variants). Doesn't fight user scrolling on subsequent
+  // renders because the dep array keys on `weeks.length`, not on
+  // every `activities` mutation.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollLeft = el.scrollWidth;
+  }, [weeks.length]);
+
   return (
     <div className="rounded-2xl p-4" style={{ backgroundColor: BELT_SURFACE }}>
-      <div className="flex justify-between items-center mb-3">
-        <div>
-          <h3 className="text-base font-bold" style={{ color: BELT_TEXT }}>Weekly Progress</h3>
-          <p className="text-sm" style={{ color: "rgba(25,26,30,0.5)" }}>Last {weeks.length} weeks</p>
-        </div>
-        {weeks.length > 0 && (
-          <span
-            className="text-sm font-black px-2.5 py-1 rounded-md"
-            style={{
-              backgroundColor: chartColor(weeks[weeks.length - 1].level),
-              color: chartTextColor(weeks[weeks.length - 1].level),
-            }}
-          >
-            H{weeks[weeks.length - 1].level}
-          </span>
-        )}
+      {/*
+        Header — title + "Last N weeks" caption. The previous top-right
+        summary badge repeated the current belt level; it duplicated the
+        dashboard chip and visually crowded the week bars, so it's been
+        removed. The chart itself still conveys the level via the bar
+        colours.
+      */}
+      <div className="mb-3">
+        <h3 className="text-base font-bold" style={{ color: BELT_TEXT }}>Weekly Progress</h3>
+        <p className="text-sm" style={{ color: "rgba(25,26,30,0.5)" }}>Last {weeks.length} weeks</p>
       </div>
 
       {/* Horizontally scrollable chart area */}
-      <div className="overflow-x-auto -mx-2 px-2">
+      <div ref={scrollRef} className="overflow-x-auto -mx-2 px-2">
         <div className="rounded-xl p-2 inline-block" style={{ backgroundColor: "rgba(0,0,0,0.06)" }}>
           <div
             className="flex items-end"

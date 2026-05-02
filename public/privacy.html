@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>H7active — Privacy Policy</title>
+  <meta name="description" content="How H7active handles your data in the mobile app and on the web." />
+  <meta name="robots" content="index,follow" />
+  <link rel="canonical" href="https://h7-web.vercel.app/privacy.html" />
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --primary: #1e3a8a;
+      --primary-soft: rgba(30, 58, 138, 0.08);
+      --border: #e2e8f0;
+      --radius: 16px;
+      --shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b1120;
+        --card: #111827;
+        --text: #f1f5f9;
+        --muted: #94a3b8;
+        --primary: #60a5fa;
+        --primary-soft: rgba(96, 165, 250, 0.12);
+        --border: #1e293b;
+        --shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 32px 20px 64px;
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .brand {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      text-decoration: none;
+      letter-spacing: -0.01em;
+    }
+    .lang-switch {
+      display: inline-flex;
+      gap: 4px;
+      padding: 4px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+    }
+    .lang-switch button {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .lang-switch button:hover { color: var(--text); }
+    .lang-switch button.active {
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+    .badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--primary);
+      background: var(--primary-soft);
+      padding: 6px 12px;
+      border-radius: 999px;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: clamp(28px, 5vw, 36px);
+      font-weight: 700;
+      line-height: 1.2;
+      margin: 0 0 12px;
+      letter-spacing: -0.02em;
+    }
+    .subtitle {
+      font-size: 17px;
+      color: var(--muted);
+      margin: 0 0 8px;
+    }
+    .last-updated {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 28px;
+      margin-top: 32px;
+    }
+    .card h2 {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 28px 0 8px;
+      color: var(--primary);
+    }
+    .card h2:first-child { margin-top: 0; }
+    .card p {
+      margin: 0 0 12px;
+      font-size: 15px;
+    }
+    .card ul {
+      margin: 0 0 16px;
+      padding-left: 20px;
+    }
+    .card ul li {
+      font-size: 15px;
+      margin-bottom: 6px;
+    }
+    .card a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .card a:hover { text-decoration: underline; }
+    .footer {
+      margin-top: 32px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .footer a {
+      color: var(--muted);
+      text-decoration: none;
+    }
+    .footer a:hover { color: var(--text); text-decoration: underline; }
+    [data-lang]:not(.visible) { display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="top-bar">
+      <a href="/" class="brand">H7active</a>
+      <div class="lang-switch" role="tablist" aria-label="Language">
+        <button type="button" data-set-lang="cs" role="tab">CS</button>
+        <button type="button" data-set-lang="en" role="tab">EN</button>
+        <button type="button" data-set-lang="sk" role="tab">SK</button>
+      </div>
+    </div>
+
+    <!-- ─────────── ČEŠTINA ─────────── -->
+    <section data-lang="cs">
+      <span class="badge">Ochrana soukromí</span>
+      <h1>Zásady ochrany osobních údajů</h1>
+      <p class="subtitle">Jak H7active nakládá s vašimi údaji v mobilní aplikaci i na webu.</p>
+      <p class="last-updated">Poslední aktualizace: 24. dubna 2026</p>
+
+      <div class="card">
+        <h2>1. Úvod</h2>
+        <p>Aplikace H7 (iOS, Android, web) pomáhá sledovat pohyb a postup belt systémem H0–H8+. Chráníme vaše soukromí v souladu s GDPR a v duchu minimalismu: shromažďujeme jen to, co je nutné pro fungování aplikace, a vaše data nikomu neprodáváme.</p>
+
+        <h2>2. Kdo jsme</h2>
+        <p>Provozovatelem služby H7active je tým H7active. Kontakt: <a href="mailto:info@h7active.cz">info@h7active.cz</a>.</p>
+
+        <h2>3. Jaké údaje zpracováváme</h2>
+        <p>Zpracováváme pouze údaje, které nám sami předáte, nebo které vzniknou vaší činností v aplikaci:</p>
+        <ul>
+          <li>Účet: e-mail, uživatelské jméno, volitelně profilová fotografie a rok narození.</li>
+          <li>Záznam aktivit: typ aktivity, délka trvání a datum, které si v aplikaci označíte jako splněné.</li>
+          <li>Volitelné propojení s Apple Health / Google Health Connect: pouze po vašem explicitním souhlasu čteme počty kroků a minuty pohybu, abychom je připočetli k vašemu týdennímu H-levelu.</li>
+          <li>Podpora: obsah zpráv, které nám pošlete přes podporu v aplikaci nebo e-mail.</li>
+          <li>Technické záznamy: typ zařízení a verze aplikace (pouze pokud dojde k chybě, abychom ji mohli opravit).</li>
+        </ul>
+
+        <h2>4. Jak údaje používáme</h2>
+        <p>Vaše data používáme výhradně k tomu, aby vám aplikace fungovala: zobrazit váš progres, spočítat týdenní H-level, synchronizovat data mezi vašimi zařízeními a odpovědět vám na dotazy podpory. Nepoužíváme je k reklamě a nepředáváme je třetím stranám pro marketing.</p>
+
+        <h2>5. Kde jsou data uložena</h2>
+        <p>Data jsou uložena u poskytovatele Supabase v datacentrech v Evropské unii. Přenos mezi aplikací a serverem je šifrovaný (TLS).</p>
+
+        <h2>6. Sdílení s třetími stranami</h2>
+        <p>Vaše data nesdílíme, neprodáváme ani neposkytujeme pro marketingové účely. Výjimkou jsou pouze nezbytní zpracovatelé: Supabase (hosting databáze), Apple a Google (doručování aplikace a push notifikace) a Apple Health / Google Health Connect, a to jen v rozsahu, který sami povolíte.</p>
+
+        <h2>7. Vaše práva</h2>
+        <p>Máte právo na přístup ke svým údajům, jejich opravu, přenos i smazání. Většinu úkonů provedete přímo v aplikaci (Profil → Osobní údaje, případně Smazat účet). Pro jakýkoliv dotaz nebo žádost nás můžete kontaktovat na <a href="mailto:info@h7active.cz">info@h7active.cz</a>.</p>
+
+        <h2>8. Děti a mladiství</h2>
+        <p>Aplikace je určena uživatelům od 13 let. U dětí mladších 13 let doporučujeme používání aplikace pod dohledem rodiče nebo zákonného zástupce.</p>
+
+        <h2>9. Změny zásad</h2>
+        <p>Tyto zásady můžeme čas od času aktualizovat, aby odrážely vývoj aplikace. Datum poslední změny vždy najdete na začátku této stránky.</p>
+
+        <h2>10. Kontakt</h2>
+        <p>Máte otázku k ochraně osobních údajů? Napište nám na <a href="mailto:info@h7active.cz">info@h7active.cz</a>.</p>
+      </div>
+
+      <p class="footer">© <span class="year"></span> H7active · <a href="/">h7-web.vercel.app</a></p>
+    </section>
+
+    <!-- ─────────── ENGLISH ─────────── -->
+    <section data-lang="en">
+      <span class="badge">Privacy</span>
+      <h1>Privacy Policy</h1>
+      <p class="subtitle">How H7active handles your data in the mobile app and on the web.</p>
+      <p class="last-updated">Last updated: 24 April 2026</p>
+
+      <div class="card">
+        <h2>1. Introduction</h2>
+        <p>The H7 app (iOS, Android, web) helps you track movement and progress through the H0–H8+ belt system. We protect your privacy in line with GDPR and in a spirit of minimalism: we collect only what the app actually needs, and we never sell your data.</p>
+
+        <h2>2. Who we are</h2>
+        <p>The H7active service is operated by the H7active team. Contact: <a href="mailto:info@h7active.cz">info@h7active.cz</a>.</p>
+
+        <h2>3. Data we collect</h2>
+        <p>We process only data you provide yourself or that arises from your activity in the app:</p>
+        <ul>
+          <li>Account: email, username, optionally a profile photo and year of birth.</li>
+          <li>Activity log: activity type, duration and date you mark as completed in the app.</li>
+          <li>Optional Apple Health / Google Health Connect link: only after your explicit consent we read step counts and movement minutes to add them to your weekly H-level.</li>
+          <li>Support: the content of messages you send us via in-app support or email.</li>
+          <li>Technical logs: device type and app version (only when an error occurs so we can fix it).</li>
+        </ul>
+
+        <h2>4. How we use the data</h2>
+        <p>We use your data solely to make the app work: show your progress, compute your weekly H-level, sync data across your devices, and answer your support questions. We do not use it for advertising and we do not share it with third parties for marketing.</p>
+
+        <h2>5. Where your data is stored</h2>
+        <p>Data is stored with Supabase in data centres in the European Union. Traffic between the app and the server is encrypted (TLS).</p>
+
+        <h2>6. Sharing with third parties</h2>
+        <p>We do not share, sell, or hand over your data for marketing. The only exceptions are essential processors: Supabase (database hosting), Apple and Google (app delivery and push notifications), and Apple Health / Google Health Connect — but only to the extent you authorise yourself.</p>
+
+        <h2>7. Your rights</h2>
+        <p>You have the right to access, correct, export and delete your data. Most actions are available directly in the app (Profile → Personal Info, or Delete Account). For any question or request you can reach us at <a href="mailto:info@h7active.cz">info@h7active.cz</a>.</p>
+
+        <h2>8. Children</h2>
+        <p>The app is intended for users aged 13 and up. For children under 13 we recommend using the app under the supervision of a parent or legal guardian.</p>
+
+        <h2>9. Changes to this policy</h2>
+        <p>We may update this policy from time to time to reflect changes in the app. The date of the last change is always shown at the top of this page.</p>
+
+        <h2>10. Contact</h2>
+        <p>Questions about privacy? Write to us at <a href="mailto:info@h7active.cz">info@h7active.cz</a>.</p>
+      </div>
+
+      <p class="footer">© <span class="year"></span> H7active · <a href="/">h7-web.vercel.app</a></p>
+    </section>
+
+    <!-- ─────────── SLOVENČINA ─────────── -->
+    <section data-lang="sk">
+      <span class="badge">Ochrana súkromia</span>
+      <h1>Zásady ochrany osobných údajov</h1>
+      <p class="subtitle">Ako H7active narába s vašimi údajmi v mobilnej aplikácii aj na webe.</p>
+      <p class="last-updated">Posledná aktualizácia: 24. apríla 2026</p>
+
+      <div class="card">
+        <h2>1. Úvod</h2>
+        <p>Aplikácia H7 (iOS, Android, web) pomáha sledovať pohyb a postup belt systémom H0–H8+. Chránime vaše súkromie v súlade s GDPR a v duchu minimalizmu: zbierame iba to, čo je nevyhnutné pre fungovanie aplikácie, a vaše údaje nikomu nepredávame.</p>
+
+        <h2>2. Kto sme</h2>
+        <p>Prevádzkovateľom služby H7active je tím H7active. Kontakt: <a href="mailto:info@h7active.cz">info@h7active.cz</a>.</p>
+
+        <h2>3. Aké údaje spracúvame</h2>
+        <p>Spracúvame iba údaje, ktoré nám sami odovzdáte, alebo ktoré vzniknú vašou činnosťou v aplikácii:</p>
+        <ul>
+          <li>Účet: e-mail, používateľské meno, voliteľne profilová fotografia a rok narodenia.</li>
+          <li>Záznam aktivít: typ aktivity, dĺžka trvania a dátum, ktorý si v aplikácii označíte ako splnený.</li>
+          <li>Voliteľné prepojenie s Apple Health / Google Health Connect: iba po vašom explicitnom súhlase čítame počty krokov a minúty pohybu, aby sme ich pripočítali k vášmu týždennému H-levelu.</li>
+          <li>Podpora: obsah správ, ktoré nám pošlete cez podporu v aplikácii alebo e-mailom.</li>
+          <li>Technické záznamy: typ zariadenia a verzia aplikácie (iba ak nastane chyba, aby sa dala opraviť).</li>
+        </ul>
+
+        <h2>4. Ako údaje používame</h2>
+        <p>Vaše údaje používame výlučne na to, aby vám aplikácia fungovala: zobraziť váš progres, spočítať týždenný H-level, synchronizovať údaje medzi vašimi zariadeniami a odpovedať na otázky podpory. Nepoužívame ich na reklamu a neposkytujeme ich tretím stranám na marketing.</p>
+
+        <h2>5. Kde sú údaje uložené</h2>
+        <p>Údaje sú uložené u poskytovateľa Supabase v dátových centrách v Európskej únii. Prenos medzi aplikáciou a serverom je šifrovaný (TLS).</p>
+
+        <h2>6. Zdieľanie s tretími stranami</h2>
+        <p>Vaše údaje nezdieľame, nepredávame ani neposkytujeme na marketingové účely. Výnimkou sú iba nevyhnutní spracovatelia: Supabase (hosting databázy), Apple a Google (doručovanie aplikácie a push notifikácie) a Apple Health / Google Health Connect, a to len v rozsahu, ktorý sami povolíte.</p>
+
+        <h2>7. Vaše práva</h2>
+        <p>Máte právo na prístup k svojim údajom, ich opravu, prenos aj vymazanie. Väčšinu úkonov urobíte priamo v aplikácii (Profil → Osobné údaje, prípadne Vymazať účet). S akoukoľvek otázkou alebo žiadosťou nás môžete kontaktovať na <a href="mailto:info@h7active.cz">info@h7active.cz</a>.</p>
+
+        <h2>8. Deti a mladiství</h2>
+        <p>Aplikácia je určená používateľom od 13 rokov. Pri deťoch mladších ako 13 rokov odporúčame používanie aplikácie pod dohľadom rodiča alebo zákonného zástupcu.</p>
+
+        <h2>9. Zmeny zásad</h2>
+        <p>Tieto zásady môžeme z času na čas aktualizovať, aby odrážali vývoj aplikácie. Dátum poslednej zmeny vždy nájdete na začiatku tejto stránky.</p>
+
+        <h2>10. Kontakt</h2>
+        <p>Máte otázku k ochrane osobných údajov? Napíšte nám na <a href="mailto:info@h7active.cz">info@h7active.cz</a>.</p>
+      </div>
+
+      <p class="footer">© <span class="year"></span> H7active · <a href="/">h7-web.vercel.app</a></p>
+    </section>
+  </div>
+
+  <script>
+    (function () {
+      // Detect preferred language: ?lang=, then localStorage, then navigator.
+      var SUPPORTED = ["cs", "en", "sk"];
+      function detectLang() {
+        var qs = new URLSearchParams(location.search).get("lang");
+        if (qs && SUPPORTED.indexOf(qs) !== -1) return qs;
+        try {
+          var saved = localStorage.getItem("h7lang");
+          if (saved && SUPPORTED.indexOf(saved) !== -1) return saved;
+        } catch (_) {}
+        var nav = (navigator.language || "en").slice(0, 2).toLowerCase();
+        return SUPPORTED.indexOf(nav) !== -1 ? nav : "en";
+      }
+      function applyLang(code) {
+        document.documentElement.lang = code;
+        document.querySelectorAll("[data-lang]").forEach(function (el) {
+          el.classList.toggle("visible", el.dataset.lang === code);
+        });
+        document.querySelectorAll("[data-set-lang]").forEach(function (btn) {
+          btn.classList.toggle("active", btn.dataset.setLang === code);
+        });
+        try { localStorage.setItem("h7lang", code); } catch (_) {}
+      }
+      // Wire buttons
+      document.querySelectorAll("[data-set-lang]").forEach(function (btn) {
+        btn.addEventListener("click", function () { applyLang(btn.dataset.setLang); });
+      });
+      // Year stamp
+      var year = new Date().getFullYear();
+      document.querySelectorAll(".year").forEach(function (el) { el.textContent = year; });
+      // Initial render
+      applyLang(detectLang());
+    })();
+  </script>
+</body>
+</html>
