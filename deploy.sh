@@ -104,6 +104,6 @@ if ! git rev-parse --abbrev-ref --symbolic-full-name "@{upstream}" >/dev/null 2>
 fi
 
 GIT_ASKPASS="$ASKPASS" GIT_TERMINAL_PROMPT=0 \
-  git -c credential.helper= push "${push_args[@]}"
+  git -c credential.helper= push ${push_args[@]+"${push_args[@]}"}
 
 echo "  ${GREEN}✓ pushed to origin/$branch as $GH_USER${RESET} ${DIM}— Vercel deploy triggered${RESET}"
