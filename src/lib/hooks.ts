@@ -236,19 +236,30 @@ export function dedupeActivities(logs: ActivityLog[]): ActivityLog[] {
       continue;
     }
     // Heuristic key for ALL non-manual rows:
-    //   `(source, date-truncated-to-minute, duration, type)`.
+    //   `(source, date-truncated-to-minute IN UTC, duration, type)`.
     // Used to be source_id-keyed only, but in production we
     // observed Apple Health storing the same workout under 3-4
     // different HKWorkout.uuid values (Garmin Connect sync retries
     // write a new HKWorkout each pass; multiple apps writing the
     // same activity create their own). The old source_id key let
-    // those land as separate rows; the heuristic key collapses
-    // them. Server-side migration 0010 cleans up the historical
-    // accumulation; this client change prevents dupes from showing
-    // up in the UI even if they slip into the DB. Mirrors iOS
-    // ActivityService.dedupeKey + Android ActivityRepository
-    // .deduplicate.
-    const minuteBucket = log.date.split(".")[0].slice(0, 16); // "2026-04-26T13:16"
+    // those land as separate rows; the heuristic key collapses them.
+    //
+    // CRITICAL: parse via Date and re-format in UTC before slicing.
+    // The raw `log.date` string can arrive in two equivalent
+    // representations for the SAME instant — `2026-05-03T08:00:00Z`
+    // (UTC) and `2026-05-03T10:00:00+02:00` (CEST local). Doing
+    // `.split(".")[0].slice(0, 16)` on the raw string compared
+    // those as different keys ("…T08:00" vs "…T10:00") and the
+    // dedup leaked: the field-reported "Running 10:00 2h46m +
+    // Running 08:00 2h46m on 3 May" pattern is exactly the CEST =
+    // UTC+2 offset between two writers emitting the same workout.
+    // `new Date(...).toISOString()` always produces UTC `…Z` form, so
+    // both representations collapse to the same canonical bucket.
+    //
+    // Mirrors iOS ActivityService.dedupeKey (Calendar.current normalises
+    // for free) + Android ActivityRepository.deduplicate (DateUtils.parse
+    // normalises to system zone before slicing).
+    const minuteBucket = new Date(log.date).toISOString().slice(0, 16); // "2026-05-03T08:00"
     const key = `${log.source}|${minuteBucket}|${log.duration_minutes}|${log.activity_type}`;
     const existing = seen.get(key);
     if (!existing) {
@@ -417,9 +428,32 @@ type ActivitiesSyncCallbacks = {
 };
 
 export function useActivities(userId: string | null, sync?: ActivitiesSyncCallbacks) {
-  const [activities, setActivities] = useState<ActivityLog[]>([]);
+  const [activities, setActivitiesRaw] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const supabase = useSupabase();
+
+  // Single chokepoint for `setActivities`. Always runs the heuristic
+  // `dedupeActivities` over the new value before assigning, so callers
+  // can use the React updater form (`prev => [inserted, ...prev]`) or
+  // pass a fresh list directly without remembering to dedupe.
+  //
+  // Mirrors the iOS `@Published var activities { didSet { … } }`
+  // observer and the Android `setActivities()` private helper in
+  // `ActivityRepository.kt`. Without this wrapper, the addActivity /
+  // updateActivity merge paths could land a duplicate row in the
+  // in-memory list — even when Postgres collapsed it server-side —
+  // because of races between the optimistic prepend and a concurrent
+  // Health Connect / HealthKit autoImport pass that already wrote
+  // the same row.
+  const setActivities = useCallback(
+    (next: ActivityLog[] | ((prev: ActivityLog[]) => ActivityLog[])) => {
+      setActivitiesRaw((prev) => {
+        const resolved = typeof next === "function" ? (next as (p: ActivityLog[]) => ActivityLog[])(prev) : next;
+        return dedupeActivities(resolved);
+      });
+    },
+    [],
+  );
 
   // Stash the callbacks in a ref so `refresh`'s identity stays stable
   // across renders — otherwise every status update would rebuild the
@@ -441,8 +475,15 @@ export function useActivities(userId: string | null, sync?: ActivitiesSyncCallba
         console.error("Activities fetch:", error.message, error.code);
         failureMsg = error.message;
       }
+      // `setActivities` runs `dedupeActivities` internally so the
+      // in-memory list is always clean. We still compute the local
+      // `dedupedActivities` because the self-heal logic below loops
+      // over it without going through React state — the local copy
+      // is the post-dedupe truth that should drive the week-records
+      // bucketing. dedupeActivities is idempotent so this isn't
+      // double work in any meaningful sense.
       const dedupedActivities = data ? dedupeActivities(data as ActivityLog[]) : [];
-      if (data) setActivities(dedupedActivities);
+      if (data) setActivities(data as ActivityLog[]);
 
       // Self-heal stale week_records. After server-side data
       // changes that bypass this client's CRUD (SQL migrations
