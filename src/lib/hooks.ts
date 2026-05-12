@@ -175,7 +175,22 @@ export function useUser() {
       setUserId(authUser.id);
       const { data, error } = await supabase.from("profiles").select("*").eq("id", authUser.id).single();
       if (error) console.error("Profile fetch:", error.message, error.code, error.details);
-      if (data) setUser(data as H7User);
+      if (data) {
+        setUser(data as H7User);
+        // Mirror the DB-persisted extended-staircase flag into the
+        // synchronous cache that `level-engine.ts` reads. The DB row
+        // is the source of truth (migration 0015); the localStorage
+        // value just lets `levelFromWeeklyMinutes` stay non-async.
+        // SSR guard: this hook only runs client-side, but we still
+        // check `window` to satisfy strict-mode and any future server
+        // utility that imports the hook by accident.
+        if (typeof window !== "undefined" && typeof (data as H7User).extended_staircase === "boolean") {
+          localStorage.setItem(
+            "h7_extended_staircase",
+            String((data as H7User).extended_staircase),
+          );
+        }
+      }
     } catch (err) {
       console.error("useUser error:", err);
     }

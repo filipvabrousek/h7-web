@@ -7,7 +7,7 @@ import { computeStatus, LEVELS, maxLevelValue } from "@/lib/level-engine";
 import { LevelBadgeCard } from "@/components/level-badge";
 import { DailyBarChart } from "@/components/weekly-bar-chart";
 import { LogActivityModal } from "@/components/log-activity-modal";
-import { startOfWeek, formatDate, normalizeDate } from "@/lib/level-engine";
+import { startOfWeek, formatDate, normalizeDate, calendarDaysRemainingInWeek } from "@/lib/level-engine";
 import { WeeklyConsistencyDots } from "@/components/weekly-consistency-dots";
 import { ThisWeekCard } from "@/components/this-week-card";
 import { h7Minutes } from "@/lib/types";
@@ -98,7 +98,7 @@ export default function DashboardPage() {
         targetMinutes={status.currentWeekTarget}
         targetLevel={status.currentWeekTargetLevel}
         isMaxLevel={isMaxLevel}
-        daysLogged={dayMinutes.filter((m) => m > 0).length}
+        daysRemainingInWeek={calendarDaysRemainingInWeek()}
       />
 
       {/* Log Activity — full width */}

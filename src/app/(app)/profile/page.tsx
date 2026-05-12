@@ -104,9 +104,18 @@ export default function ProfilePage() {
     dark: "theme.dark",
   };
 
+  // Seed the toggle from the user row (DB source of truth) once the
+  // profile loads, falling back to the localStorage cache while the
+  // fetch is in flight so the UI doesn't flicker on a slow network.
+  // The `useUser` hook also writes the DB value into localStorage on
+  // load — see hooks.ts — so the two stay in sync.
   useEffect(() => {
-    setExtendedStaircase(localStorage.getItem("h7_extended_staircase") === "true");
-  }, []);
+    if (user) {
+      setExtendedStaircase(user.extended_staircase === true);
+    } else {
+      setExtendedStaircase(localStorage.getItem("h7_extended_staircase") === "true");
+    }
+  }, [user]);
 
   if (!user) return null;
 
@@ -238,6 +247,13 @@ export default function ProfilePage() {
             const next = !extendedStaircase;
             setExtendedStaircase(next);
             localStorage.setItem("h7_extended_staircase", String(next));
+            // Persist to the profile row so the choice survives
+            // reinstall + syncs cross-device (migration 0015). The
+            // localStorage write above stays as a synchronous-read
+            // cache for `level-engine.ts`; the DB write below is
+            // the durable source of truth. `updateUser` is no-op
+            // safe when `userId` is null (logged-out edge case).
+            updateUser({ extended_staircase: next });
             // Re-stamp every cached `level_achieved` against the
             // new `Level.maxAllowed` cap. Without this, weeks that
             // previously hit the H8+ minute threshold but were

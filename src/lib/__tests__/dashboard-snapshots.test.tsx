@@ -172,7 +172,7 @@ describe("Per-scenario dashboard cards — Alice / Bob / Carol", () => {
         currentMinutes={60}
         targetMinutes={60}
         targetLevel={LEVELS[1]}
-        daysLogged={2}
+        daysRemainingInWeek={5}
       />,
     );
     expect(html).toMatchSnapshot();
@@ -207,7 +207,7 @@ describe("Per-scenario dashboard cards — Alice / Bob / Carol", () => {
         currentMinutes={250}
         targetMinutes={360}
         targetLevel={LEVELS[6]}
-        daysLogged={3}
+        daysRemainingInWeek={4}
       />,
     );
     expect(html).toMatchSnapshot();
@@ -275,7 +275,7 @@ describe("WeeklyConsistencyDots — three seed-account scenarios", () => {
         currentMinutes={127}
         targetMinutes={420}
         targetLevel={LEVELS[7]}
-        daysLogged={2}
+        daysRemainingInWeek={5}
       />,
     );
     expect(html).toMatchSnapshot();
@@ -300,7 +300,7 @@ describe("WeeklyConsistencyDots — three seed-account scenarios", () => {
         currentMinutes={270}
         targetMinutes={420}
         targetLevel={LEVELS[7]}
-        daysLogged={5}
+        daysRemainingInWeek={2}
       />,
     );
     expect(html).toMatchSnapshot();
@@ -399,7 +399,7 @@ describe("ThisWeekCard — progress bar parity", () => {
         currentMinutes={30}
         targetMinutes={60}
         targetLevel={LEVELS[1]}
-        daysLogged={2}
+        daysRemainingInWeek={5}
       />,
     );
     expect(html).toMatchSnapshot();
@@ -411,7 +411,7 @@ describe("ThisWeekCard — progress bar parity", () => {
         currentMinutes={780}
         targetMinutes={840}
         targetLevel={LEVELS[14]}
-        daysLogged={5}
+        daysRemainingInWeek={2}
       />,
     );
     expect(html).toMatchSnapshot();
@@ -453,7 +453,7 @@ describe("ThisWeekCard — progress bar parity", () => {
         currentMinutes={420}
         targetMinutes={420}
         targetLevel={LEVELS[7]}
-        daysLogged={6}
+        daysRemainingInWeek={1}
       />,
     );
     expect(html).toMatchSnapshot();
@@ -466,7 +466,7 @@ describe("ThisWeekCard — progress bar parity", () => {
         targetMinutes={840}
         targetLevel={LEVELS[14]}
         isMaxLevel
-        daysLogged={6}
+        daysRemainingInWeek={1}
       />,
     );
     expect(html).toMatchSnapshot();

@@ -22,6 +22,7 @@ import {
   computeStatus,
   startOfWeek,
   formatDate,
+  calendarDaysRemainingInWeek,
 } from "@/lib/level-engine";
 import type { ActivityLog, WeekRecord } from "@/lib/types";
 
@@ -240,4 +241,23 @@ describe("effectiveLevel = max(currentWeekLevel, bankedLevel)", () => {
     const status = computeStatus(activities, records, anchor);
     expect(status.currentLevel.value).toBe(8);
   });
+});
+
+// ------------------------------------------------------------------
+// calendarDaysRemainingInWeek — calendar-based "days left this week"
+//
+// Formula: 7 − todayIdx, where todayIdx = (getDay() + 6) % 7 (Mon=0…Sun=6)
+//   Mon → 7, Tue → 6, Wed → 5, Thu → 4, Fri → 3, Sat → 2, Sun → 1
+// ------------------------------------------------------------------
+
+describe("calendarDaysRemainingInWeek", () => {
+  const date = (isoDate: string) => new Date(`${isoDate}T12:00:00`);
+
+  it("Monday = 7", () => expect(calendarDaysRemainingInWeek(date("2026-04-27"))).toBe(7));
+  it("Tuesday = 6", () => expect(calendarDaysRemainingInWeek(date("2026-04-28"))).toBe(6));
+  it("Wednesday = 5", () => expect(calendarDaysRemainingInWeek(date("2026-04-29"))).toBe(5));
+  it("Thursday = 4", () => expect(calendarDaysRemainingInWeek(date("2026-04-30"))).toBe(4));
+  it("Friday = 3", () => expect(calendarDaysRemainingInWeek(date("2026-05-01"))).toBe(3));
+  it("Saturday = 2", () => expect(calendarDaysRemainingInWeek(date("2026-05-02"))).toBe(2));
+  it("Sunday = 1 (never 0)", () => expect(calendarDaysRemainingInWeek(date("2026-05-03"))).toBe(1));
 });

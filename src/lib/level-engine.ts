@@ -129,6 +129,17 @@ export function dayOfWeek(date: Date): number {
   return d === 0 ? 7 : d; // Mon=1 … Sun=7
 }
 
+/**
+ * Calendar days remaining in the current week (Mon–Sun), inclusive of today.
+ * Monday = 7, Tuesday = 6, …, Sunday = 1. Never returns 0.
+ *
+ * todayIdx: Mon=0 … Sun=6 (same as `(date.getDay() + 6) % 7`)
+ */
+export function calendarDaysRemainingInWeek(date: Date = new Date()): number {
+  const todayIdx = (date.getDay() + 6) % 7; // Mon=0 … Sun=6
+  return 7 - todayIdx; // Mon=7 … Sun=1
+}
+
 export function formatDate(date: Date): string {
   // Use local date parts — toISOString() converts to UTC which shifts dates in non-UTC timezones
   const y = date.getFullYear();

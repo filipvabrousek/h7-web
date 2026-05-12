@@ -24,6 +24,10 @@ function saveRecentActivity(type: ActivityType) {
 
 interface Props {
   userId: string;
+  /** Optional pre-fill date in `YYYY-MM-DD` form. When provided (e.g. the
+   *  user tapped a specific cell in the History calendar), the date input
+   *  is seeded to that day instead of today. */
+  initialDate?: string;
   onSave: (log: {
     user_id: string;
     date: string;
@@ -35,10 +39,11 @@ interface Props {
   onClose: () => void;
 }
 
-export function LogActivityModal({ userId, onSave, onClose }: Props) {
+export function LogActivityModal({ userId, initialDate, onSave, onClose }: Props) {
   const [hours, setHours] = useState(0);
   const [minutes, setMinutes] = useState(30);
   const [date, setDate] = useState(() => {
+    if (initialDate) return initialDate;
     // Use local date parts to avoid UTC timezone shift
     const now = new Date();
     const y = now.getFullYear();

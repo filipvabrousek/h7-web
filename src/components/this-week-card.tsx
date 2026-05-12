@@ -26,10 +26,9 @@ export interface ThisWeekCardProps {
    *  depending on the extended-staircase setting) so the card shows
    *  "MAX LEVEL" instead of "TARGET MET" when the threshold is met. */
   isMaxLevel?: boolean;
-  /** Number of days this week with at least one logged activity —
-   *  used to render the "30' / 4 days" remaining-time helper text.
-   *  Pass 0 to suppress. */
-  daysLogged?: number;
+  /** Calendar days left in the current week (Mon–Sun), inclusive of today.
+   *  Monday = 7, …, Sunday = 1. Used to render "30' / 4 days". */
+  daysRemainingInWeek?: number;
 }
 
 export function ThisWeekCard({
@@ -37,10 +36,10 @@ export function ThisWeekCard({
   targetMinutes,
   targetLevel,
   isMaxLevel = false,
-  daysLogged = 0,
+  daysRemainingInWeek = 0,
 }: ThisWeekCardProps) {
   const remaining = Math.max(0, targetMinutes - currentMinutes);
-  const daysRemaining = Math.max(0, 7 - daysLogged);
+  const daysRemaining = daysRemainingInWeek;
   const progress =
     targetMinutes > 0 ? Math.min((currentMinutes / targetMinutes) * 100, 100) : 0;
   const targetMet = currentMinutes >= targetMinutes && targetMinutes > 0;

@@ -15,6 +15,7 @@ import {
 } from "@/lib/level-engine";
 import { ChevronLeft, ChevronRight, Trash2, X, Pencil } from "lucide-react";
 import { EditActivityModal } from "@/components/edit-activity-modal";
+import { LogActivityModal } from "@/components/log-activity-modal";
 import { ActivityIcon, colorForActivityType, displayNameForActivityType } from "@/lib/activity-icons";
 
 type Period = "week" | "month" | "all";
@@ -59,7 +60,7 @@ function aggregateByType(
 export default function HistoryPage() {
   const { userId } = useUser();
   const { status, beginSync, endSyncSuccess, endSyncFailure } = useSyncStatus();
-  const { activities, updateActivity, deleteActivity } = useActivities(userId, {
+  const { activities, addActivity, updateActivity, deleteActivity } = useActivities(userId, {
     beginSync,
     endSyncSuccess,
     endSyncFailure,
@@ -68,6 +69,12 @@ export default function HistoryPage() {
   const [deleteTarget, setDeleteTarget] = useState<ActivityLog | null>(null);
   const [editingActivity, setEditingActivity] = useState<ActivityLog | null>(null);
   const [displayMonth, setDisplayMonth] = useState(() => startOfMonth(new Date()));
+  /** Pre-fill date when the user taps a calendar cell. `null` keeps the
+   *  modal closed; a `YYYY-MM-DD` string opens it seeded to that day. The
+   *  calendar only fires this for past + today cells (future cells are
+   *  click-inert) so the modal never opens on a date that can't yet
+   *  have activity. */
+  const [logSheetDate, setLogSheetDate] = useState<string | null>(null);
 
   const tabs: { key: Period; label: string }[] = [
     { key: "week", label: "Week" },
@@ -267,18 +274,36 @@ export default function HistoryPage() {
                 ? "rgba(25,26,30,0.25)"
                 : "rgba(25,26,30,0.8)";
 
+            // Future cells stay inert — no activity can exist there yet,
+            // so the manual-entry sheet would be misleading. Past + today
+            // cells become clickable and open `LogActivityModal` pre-filled
+            // with that day's date. Mirrors the iOS/Android calendar tap.
+            const clickable = !cell.isFuture;
+            const dateForCell = cell.date; // narrow for the closure
+            const cellIsoDate = `${dateForCell.getFullYear()}-${String(
+              dateForCell.getMonth() + 1
+            ).padStart(2, "0")}-${String(dateForCell.getDate()).padStart(2, "0")}`;
+
             return (
-              <div
+              <button
                 key={i}
+                type="button"
+                disabled={!clickable}
+                onClick={clickable ? () => setLogSheetDate(cellIsoDate) : undefined}
                 className={`rounded-lg flex flex-col items-center justify-center ${
                   cell.isToday ? "ring-2" : ""
-                }`}
+                } ${clickable ? "cursor-pointer hover:opacity-80 transition-opacity" : "cursor-default"}`}
                 style={{
                   height: 54,
                   backgroundColor: bg,
                   color: fg,
                   ...(cell.isToday ? { "--tw-ring-color": "#1A5494" } as React.CSSProperties : {}),
                 }}
+                aria-label={
+                  clickable
+                    ? `Log activity for ${dateForCell.toDateString()}`
+                    : undefined
+                }
               >
                 <span className="text-sm font-bold leading-tight">
                   {cell.date.getDate()}
@@ -288,7 +313,7 @@ export default function HistoryPage() {
                     {cell.minutes}&apos;
                   </span>
                 )}
-              </div>
+              </button>
             );
           })}
         </div>
@@ -392,6 +417,18 @@ export default function HistoryPage() {
           activity={editingActivity}
           onSave={(updated) => { updateActivity(updated); setEditingActivity(null); }}
           onClose={() => setEditingActivity(null)}
+        />
+      )}
+
+      {/* Log activity modal — opened by tapping a past/today calendar cell.
+          `initialDate` flows the tapped day's `YYYY-MM-DD` into the modal so
+          the date picker starts on the user's chosen day rather than today. */}
+      {logSheetDate && userId && (
+        <LogActivityModal
+          userId={userId}
+          initialDate={logSheetDate}
+          onSave={(log) => { addActivity(log); setLogSheetDate(null); }}
+          onClose={() => setLogSheetDate(null)}
         />
       )}
 

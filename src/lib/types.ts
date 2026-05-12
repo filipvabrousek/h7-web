@@ -181,6 +181,13 @@ export interface H7User {
   country: string | null;
   avatar_url: string | null;
   initial_weekly_activity: number | null;
+  /** Whether the user has unlocked the H8–H14 extended staircase.
+   *  Persisted on the profile row (migration 0015) so the toggle
+   *  survives reinstall + sync cross-device. The localStorage key
+   *  `h7_extended_staircase` is kept as a synchronous-read cache for
+   *  `level-engine.ts` and is written every time this field is
+   *  fetched or mutated. */
+  extended_staircase: boolean;
   created_at: string | null;
   updated_at: string | null;
 }
