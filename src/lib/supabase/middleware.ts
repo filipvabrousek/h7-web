@@ -54,8 +54,19 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = normalizePath(request.nextUrl.pathname);
 
+  // Paths that must run for unauthenticated users — primarily the
+  // OAuth callback. When the user comes back from Google with a
+  // `?code=`, they have NO Supabase session yet; the session is what
+  // the callback's `exchangeCodeForSession` creates. If we bounce
+  // them to /login here, the code never gets exchanged, and they're
+  // dumped on the login screen with no session and no error message
+  // — the exact "I tapped Google and ended up back on /login"
+  // symptom we just hit. Treat anything under `/auth/` as exempt so
+  // future password-reset / magic-link routes don't repeat the bug.
+  const isAuthRoute = pathname.startsWith("/auth/");
+
   // Redirect unauthenticated users to login
-  if (!user && !pathname.startsWith("/login")) {
+  if (!user && !pathname.startsWith("/login") && !isAuthRoute) {
     return redirectTo(request, "/login");
   }
 
@@ -64,13 +75,19 @@ export async function updateSession(request: NextRequest) {
     return redirectTo(request, "/");
   }
 
-  // Redirect new users to onboarding if they haven't completed it
+  // Redirect new users to onboarding if they haven't completed it.
+  // `/auth/*` is exempt so the OAuth callback gets to run its own
+  // onboarding-vs-dashboard branching with profile-bootstrap logic
+  // we can't replicate here (we'd need the Google `user_metadata`
+  // name to seed `profiles.username`, which the callback has but
+  // middleware would need to re-extract).
   if (
     user &&
     !pathname.startsWith("/onboarding") &&
     !pathname.startsWith("/login") &&
     !pathname.startsWith("/admin") &&
-    !pathname.startsWith("/api")
+    !pathname.startsWith("/api") &&
+    !isAuthRoute
   ) {
     const { data: profile } = await supabase
       .from("profiles")
