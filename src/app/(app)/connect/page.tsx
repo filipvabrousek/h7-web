@@ -1,14 +1,18 @@
 "use client";
 
-import { ExternalLink, Globe } from "lucide-react";
+import { Camera, ExternalLink, Globe, Users } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
 
 type IconComponent = ComponentType<SVGProps<SVGSVGElement> & { size?: number }>;
 
 // ---- Links ----------------------------------------------------------------
-// Connect tab intentionally only exposes the H7 web app. Social accounts
-// (Facebook/Instagram/YouTube/X) were removed so every platform — iOS,
-// Android, web — funnels users to the same canonical entry point.
+// Connect tab — H7 canonical entry + the social channels the team
+// actively maintains. lucide-react v1.7+ dropped third-party brand
+// glyphs (Facebook/Instagram/X/etc.) for trademark-policy reasons, so
+// we use semantic substitutes — Camera for Instagram and Users for
+// Facebook — and let the title text + brand-coloured tile carry
+// identity. Same compromise the mobile clients use with SF Symbols /
+// Material Icons, which dropped brand glyphs for the same reason.
 
 interface SocialLink {
   name: string;
@@ -19,6 +23,8 @@ interface SocialLink {
 
 const SOCIAL_LINKS: (SocialLink & { darkColor?: string })[] = [
   { name: "H7", url: "https://h7-web.vercel.app/", color: "#063a72", darkColor: "#4A9AE6", Icon: Globe },
+  { name: "Instagram", url: "https://www.instagram.com/h7active/", color: "#E4405F", Icon: Camera },
+  { name: "Facebook", url: "https://www.facebook.com/h7active", color: "#1877F2", Icon: Users },
 ];
 
 export default function ConnectPage() {
