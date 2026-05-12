@@ -31,3 +31,27 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ── Interactive cursors ─────────────────────────────────────────
+   Tailwind v3+ removed the historical `button { cursor: pointer }`
+   reset on the assumption that "real" apps should explicitly opt
+   into pointer cursors per-element. In practice that bites every
+   web-app project the first time someone notices their buttons
+   feel inert — the hover cursor stays as the text I-beam instead
+   of becoming a hand, which subtly tells users "this isn't
+   clickable" even when it is.
+
+   We restore the convention site-wide, with two carve-outs:
+
+   • `:disabled` keeps the default (not-allowed) cursor — disabled
+     buttons should NOT look clickable.
+   • `[role="button"]` covers <div>/<span> elements styled as
+     buttons (the calendar tile in History uses this pattern), so
+     they get the same affordance.
+
+   Anchor tags (`a[href]`) already get the hand cursor by default
+   in every browser, so we don't need to repeat them here. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
