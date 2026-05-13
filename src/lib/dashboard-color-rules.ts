@@ -147,22 +147,105 @@ export function targetIsMet(currentMinutes: number, targetMinutes: number): bool
  * supplies `currentWeekTargetLevel`), but the helper defaults to
  * `colorForLevel(0)` if it ever regresses to null — neutral gray
  * rather than a crash.
+ *
+ * `isDark` lifts the belt color in dark mode only (HSL lightness +10%,
+ * saturation −5%) so the bar pops against the dark card surface. Light
+ * mode passes through — keeps belt swatches everywhere else in the app
+ * untouched. Mirrors iOS WeekProgressView.adapt(_:scheme:) and Android
+ * DashboardColorRules.adapt(...).
  */
 export function progressBarColor(
   currentMinutes: number,
   targetMinutes: number,
   targetLevel: LevelDef | null | undefined,
+  isDark: boolean = false,
 ): string {
   if (targetIsMet(currentMinutes, targetMinutes)) {
     // BeltGreen == colorForLevel(4) — H4 belt color, #33B859.
-    return colorForLevel(4);
+    return adapt(colorForLevel(4), isDark);
   }
   if (!targetLevel) return colorForLevel(0);
-  return colorForLevel(targetLevel.value);
+  return adapt(colorForLevel(targetLevel.value), isDark);
 }
 
 /** Color of the "TO Hn" label on the right side of the card. Mirrors
  *  the progress bar tint so the two elements visually agree. */
-export function toLevelLabelColor(targetLevel: LevelDef): string {
-  return colorForLevel(targetLevel.value);
+export function toLevelLabelColor(
+  targetLevel: LevelDef,
+  isDark: boolean = false,
+): string {
+  return adapt(colorForLevel(targetLevel.value), isDark);
+}
+
+/**
+ * Slight lift on belt colors in dark mode so the chip + bar pop against
+ * the dark card surface. Light mode passes through — keeps belt
+ * swatches everywhere else in the app untouched.
+ *
+ * Approach: convert the CSS hex through RGB → HSL, lift L by ~10
+ * percentage points (clamped), shave 5 off saturation, convert back.
+ * Roughly matches the iOS HSV brightness +0.18 / saturation −0.05 rule
+ * for typical mid-saturation belt swatches (sRGB sits close enough to
+ * HSL for our purposes — empty-mode hex strings only).
+ *
+ * Accepts the hex strings emitted by `colorForLevel`. Defensive on
+ * malformed input → passes through.
+ */
+export function adapt(color: string, isDark: boolean): string {
+  if (!isDark) return color;
+  const m = /^#([0-9a-fA-F]{6})$/.exec(color);
+  if (!m) return color;
+  const n = parseInt(m[1], 16);
+  const r = ((n >> 16) & 0xff) / 255;
+  const g = ((n >> 8) & 0xff) / 255;
+  const b = (n & 0xff) / 255;
+  const maxC = Math.max(r, g, b);
+  const minC = Math.min(r, g, b);
+  const l = (maxC + minC) / 2;
+  let h = 0;
+  let s = 0;
+  if (maxC !== minC) {
+    const d = maxC - minC;
+    s = l > 0.5 ? d / (2 - maxC - minC) : d / (maxC + minC);
+    switch (maxC) {
+      case r:
+        h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+        break;
+      case g:
+        h = ((b - r) / d + 2) / 6;
+        break;
+      default:
+        h = ((r - g) / d + 4) / 6;
+    }
+  }
+  const newL = Math.min(1, l + 0.1);
+  const newS = Math.max(0, s - 0.05);
+  const hue2rgb = (p: number, q: number, t: number): number => {
+    let tt = t;
+    if (tt < 0) tt += 1;
+    if (tt > 1) tt -= 1;
+    if (tt < 1 / 6) return p + (q - p) * 6 * tt;
+    if (tt < 1 / 2) return q;
+    if (tt < 2 / 3) return p + (q - p) * (2 / 3 - tt) * 6;
+    return p;
+  };
+  let r2: number;
+  let g2: number;
+  let b2: number;
+  if (newS === 0) {
+    r2 = newL;
+    g2 = newL;
+    b2 = newL;
+  } else {
+    const q = newL < 0.5 ? newL * (1 + newS) : newL + newS - newL * newS;
+    const p = 2 * newL - q;
+    r2 = hue2rgb(p, q, h + 1 / 3);
+    g2 = hue2rgb(p, q, h);
+    b2 = hue2rgb(p, q, h - 1 / 3);
+  }
+  const toHex = (v: number): string =>
+    Math.round(v * 255)
+      .toString(16)
+      .padStart(2, "0");
+  return `#${toHex(r2)}${toHex(g2)}${toHex(b2)}`;
 }

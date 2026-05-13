@@ -7,7 +7,7 @@ import { computeBMI, bmiCategory } from "@/lib/types";
 import { WeeklyProgressChart } from "@/components/weekly-bar-chart";
 import { LevelBadge } from "@/components/level-badge";
 import {
-  User, Watch, Bell, Globe, Lock, HelpCircle, LogOut, ChevronRight, X, ArrowUpRight, Check, Trash2, Camera, Sun, Moon, Monitor, Palette, Shield,
+  User, Globe, HelpCircle, LogOut, ChevronRight, X, ArrowUpRight, Check, Trash2, Camera, Sun, Moon, Monitor, Palette, Shield,
 } from "lucide-react";
 import { useI18n, type AppLanguage } from "@/lib/i18n";
 import { useTheme, type ThemeMode } from "@/lib/theme";
@@ -131,13 +131,11 @@ export default function ProfilePage() {
           subtitle: [user.gender, bmi ? `BMI ${bmi.toFixed(1)}` : null].filter(Boolean).join(" · ") || undefined,
           onClick: () => setShowPersonalInfo(true),
         },
-        { icon: Watch, label: t("profile.connectedDevices"), subtitle: t("profile.watchesApps"), onClick: undefined },
       ],
     },
     {
       title: t("profile.settings"),
       items: [
-        { icon: Bell, label: t("profile.notifications"), subtitle: t("profile.alertsReminders"), onClick: undefined },
         { icon: Globe, label: t("profile.language"), subtitle: t(languageDisplayKey[language]), onClick: () => setShowLanguage(true) },
         { icon: Palette, label: t("profile.theme"), subtitle: t(themeDisplayKey[themeMode]), onClick: () => setShowTheme(true) },
       ],
@@ -145,7 +143,6 @@ export default function ProfilePage() {
     {
       title: t("profile.other"),
       items: [
-        { icon: Lock, label: t("profile.privacySecurity"), onClick: undefined, subtitle: undefined },
         // Canonical URL — same /privacy.html that's submitted to App Store
         // Connect and Google Play. Lives in /public so it's served at the
         // domain root. Opens in a new tab so the user doesn't lose their
@@ -299,6 +296,26 @@ export default function ProfilePage() {
           </span>
         </button>
       </div>
+
+      {/* Replay onboarding — re-enters /onboarding without clearing the
+          persistent completed flag (initial_weekly_activity). The
+          ?replay=1 query bypasses middleware's "onboarded users go home"
+          redirect. Mirrors iOS AuthViewModel.replayOnboarding + Android
+          ProfileScreen entry; the boot-loop-safe behavior is critical —
+          do NOT null out initial_weekly_activity here. */}
+      <button
+        onClick={() => { window.location.href = "/app/onboarding?replay=1"; }}
+        className="w-full bg-gray-200 dark:bg-[#242A2A] rounded-xl p-3 flex items-center gap-3 hover:bg-gray-300 dark:hover:bg-gray-700 transition"
+      >
+        <div className="w-9 h-9 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
+          <User size={16} className="text-blue-600 dark:text-blue-300" />
+        </div>
+        <div className="flex-1 text-left">
+          <div className="text-sm font-medium">{t("profile.replayOnboarding")}</div>
+          <div className="text-xs text-gray-500">{t("profile.replayOnboardingSub")}</div>
+        </div>
+        <ChevronRight size={14} className="text-gray-300" />
+      </button>
 
       {/* Sign out */}
       <button

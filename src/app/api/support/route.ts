@@ -34,15 +34,22 @@ export async function POST(req: Request) {
     .eq("id", user.id)
     .single();
 
-  const { error } = await supabase.from("support_messages").insert({
-    user_id: user.id,
-    username: profile?.username || "User",
-    text,
-    media_url: null,
-    media_type: null,
-    is_from_support: false,
-  });
+  const { data: inserted, error } = await supabase
+    .from("support_messages")
+    .insert({
+      user_id: user.id,
+      username: profile?.username || "User",
+      text,
+      media_url: null,
+      media_type: null,
+      is_from_support: false,
+    })
+    .select("*")
+    .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
+  if (error) {
+    console.error("[/api/support POST] insert failed:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  return NextResponse.json({ ok: true, message: inserted });
 }

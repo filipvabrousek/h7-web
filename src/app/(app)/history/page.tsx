@@ -13,7 +13,7 @@ import {
   formatDate,
   normalizeDate,
 } from "@/lib/level-engine";
-import { ChevronLeft, ChevronRight, Trash2, X, Pencil } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Trash2, X, Pencil } from "lucide-react";
 import { EditActivityModal } from "@/components/edit-activity-modal";
 import { LogActivityModal } from "@/components/log-activity-modal";
 import { ActivityIcon, colorForActivityType, displayNameForActivityType } from "@/lib/activity-icons";
@@ -69,11 +69,14 @@ export default function HistoryPage() {
   const [deleteTarget, setDeleteTarget] = useState<ActivityLog | null>(null);
   const [editingActivity, setEditingActivity] = useState<ActivityLog | null>(null);
   const [displayMonth, setDisplayMonth] = useState(() => startOfMonth(new Date()));
-  /** Pre-fill date when the user taps a calendar cell. `null` keeps the
-   *  modal closed; a `YYYY-MM-DD` string opens it seeded to that day. The
-   *  calendar only fires this for past + today cells (future cells are
-   *  click-inert) so the modal never opens on a date that can't yet
-   *  have activity. */
+  /** Calendar-cell tap opens a Day-Details modal first; from there the
+   *  user can edit / delete existing entries OR open the log-activity
+   *  modal to add a new one. The two `*Date` states drive separate
+   *  modals — both can be set simultaneously (the log-activity modal
+   *  stacks on top of the day-details modal when the user taps "Add"
+   *  inside it). Both stored as `YYYY-MM-DD` strings so the calendar
+   *  cell's iso-date string can be assigned directly. */
+  const [dayDetailDate, setDayDetailDate] = useState<string | null>(null);
   const [logSheetDate, setLogSheetDate] = useState<string | null>(null);
 
   const tabs: { key: Period; label: string }[] = [
@@ -289,7 +292,7 @@ export default function HistoryPage() {
                 key={i}
                 type="button"
                 disabled={!clickable}
-                onClick={clickable ? () => setLogSheetDate(cellIsoDate) : undefined}
+                onClick={clickable ? () => setDayDetailDate(cellIsoDate) : undefined}
                 className={`rounded-lg flex flex-col items-center justify-center ${
                   cell.isToday ? "ring-2" : ""
                 } ${clickable ? "cursor-pointer hover:opacity-80 transition-opacity" : "cursor-default"}`}
@@ -420,14 +423,129 @@ export default function HistoryPage() {
         />
       )}
 
-      {/* Log activity modal — opened by tapping a past/today calendar cell.
-          `initialDate` flows the tapped day's `YYYY-MM-DD` into the modal so
-          the date picker starts on the user's chosen day rather than today. */}
+      {/* Day-details modal — opened by tapping a past/today calendar
+          cell. Lists the day's activities (each tappable to edit, each
+          with a trash button) plus an "Add activity" button that opens
+          the log-activity modal pre-filled with the tapped day. Mirrors
+          iOS `DayActivitiesSheet` and Android `DayActivitiesSheet.kt`. */}
+      {dayDetailDate && (() => {
+        // Filter activities for the chosen day. Same date-compare the
+        // calendar grid uses (substring/local match against
+        // YYYY-MM-DD) so users see exactly what they see in the tile.
+        const dayActivities = activities.filter((a) =>
+          (a.date.includes("T") ? a.date.slice(0, 10) : a.date.slice(0, 10)) === dayDetailDate
+        ).sort((a, b) => a.date.localeCompare(b.date));
+
+        // Human-readable date for the modal title — uses the user's
+        // locale so Czech/Slovak speakers see the native form.
+        const dateForTitle = new Date(dayDetailDate + "T00:00:00");
+        const titleText = dateForTitle.toLocaleDateString(undefined, {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+
+        return (
+          <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center bg-black/40">
+            <div className="bg-white dark:bg-gray-900 w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl max-h-[85vh] overflow-y-auto">
+              {/* Header */}
+              <div className="sticky top-0 bg-white dark:bg-gray-900 px-5 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
+                <div className="font-bold text-base capitalize">{titleText}</div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setLogSheetDate(dayDetailDate); }}
+                    className="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 flex items-center justify-center hover:bg-blue-200 dark:hover:bg-blue-900/60 transition"
+                    aria-label="Add activity"
+                  >
+                    <Plus size={18} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDayDetailDate(null)}
+                    className="w-9 h-9 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-center"
+                    aria-label="Close"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="p-4 space-y-2">
+                {dayActivities.length === 0 ? (
+                  <div className="text-center py-10 text-sm text-gray-400 dark:text-gray-500">
+                    No activities yet. Tap <Plus size={14} className="inline -mt-0.5" /> to add one.
+                  </div>
+                ) : (
+                  dayActivities.map((a) => {
+                    const tint = colorForActivityType(a.activity_type);
+                    const dur = formatDuration(a.duration_minutes);
+                    const time = a.date.includes("T")
+                      ? new Date(a.date).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
+                      : "";
+                    return (
+                      <div
+                        key={a.id}
+                        className="flex items-center gap-3 bg-gray-50 dark:bg-[#1f2424] rounded-xl px-3 py-2.5"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => { setEditingActivity(a); setDayDetailDate(null); }}
+                          className="flex items-center gap-3 flex-1 min-w-0 text-left"
+                        >
+                          <div
+                            className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                            style={{ backgroundColor: `${tint}2E` }}
+                          >
+                            <ActivityIcon type={a.activity_type} size={20} color={tint} weight="bold" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-semibold truncate">
+                              {displayNameForActivityType(a.activity_type)}
+                            </div>
+                            {time && (
+                              <div className="text-xs text-gray-500">{time}</div>
+                            )}
+                          </div>
+                        </button>
+                        <div className="text-sm font-semibold whitespace-nowrap text-gray-700 dark:text-gray-300">
+                          {dur}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteTarget(a)}
+                          className="p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500"
+                          aria-label="Delete activity"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Log activity modal — opened by tapping "Add" inside the day-
+          details modal. `initialDate` flows the chosen day's `YYYY-MM-DD`
+          into the modal so the date picker starts on the user's chosen
+          day rather than today. */}
       {logSheetDate && userId && (
         <LogActivityModal
           userId={userId}
           initialDate={logSheetDate}
-          onSave={(log) => { addActivity(log); setLogSheetDate(null); }}
+          onSave={(log) => {
+            addActivity(log);
+            setLogSheetDate(null);
+            // Keep the day-details modal open so the user sees the
+            // freshly added entry land in the list — feels more
+            // responsive than dismissing both.
+          }}
           onClose={() => setLogSheetDate(null)}
         />
       )}

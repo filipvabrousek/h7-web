@@ -100,16 +100,24 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
-  // Redirect onboarded users away from onboarding
+  // Redirect onboarded users away from onboarding — UNLESS they
+  // explicitly asked to replay it. The Profile → "Replay onboarding"
+  // row navigates to `/onboarding?replay=1`. We must NOT clear the
+  // persistent completed flag (same boot-loop fix as iOS
+  // `AuthViewModel.replayOnboarding`), so we keep `initial_weekly_activity`
+  // intact and just let the user re-enter the flow via this query param.
   if (user && pathname.startsWith("/onboarding")) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("initial_weekly_activity")
-      .eq("id", user.id)
-      .single();
+    const isReplay = request.nextUrl.searchParams.get("replay") === "1";
+    if (!isReplay) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("initial_weekly_activity")
+        .eq("id", user.id)
+        .single();
 
-    if (profile && profile.initial_weekly_activity != null) {
-      return redirectTo(request, "/");
+      if (profile && profile.initial_weekly_activity != null) {
+        return redirectTo(request, "/");
+      }
     }
   }
 

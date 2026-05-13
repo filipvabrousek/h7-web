@@ -69,6 +69,7 @@ export function SupportChatModal({ onClose }: { onClose: () => void }) {
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     const trimmed = text.trim();
     if (!trimmed || sending) return;
 
@@ -91,12 +92,36 @@ export function SupportChatModal({ onClose }: { onClose: () => void }) {
       const res = await fetch("/api/support", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify({ text: trimmed }),
       });
       if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        console.error("[support] send failed", res.status, errBody);
         setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
+      } else {
+        // Swap optimistic for the persisted row returned by the server,
+        // so the message survives independent of the next poll cycle.
+        const json = (await res.json().catch(() => ({}))) as {
+          message?: SupportMessage;
+        };
+        if (json.message) {
+          setMessages((prev) => {
+            // Drop the optimistic row and any pre-existing server row with the same id
+            const filtered = prev.filter(
+              (m) => m.id !== optimisticId && m.id !== json.message!.id,
+            );
+            return [...filtered, json.message!].sort((a, b) =>
+              a.created_at.localeCompare(b.created_at),
+            );
+          });
+        }
+        // Trigger an immediate refetch so the message list converges
+        // to the server's authoritative state without a 5s wait.
+        fetchMessages();
       }
-    } catch {
+    } catch (err) {
+      console.error("[support] send threw", err);
       setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
     }
     setSending(false);
